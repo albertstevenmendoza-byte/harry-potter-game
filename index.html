@@ -8,9 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 <style>
-  /* ── Reset & base ───────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
     --gold:       #c9a84c;
     --gold-dim:   #7a5c1e;
@@ -28,9 +26,7 @@
     --glow-green: 0 0 20px rgba(57,255,84,0.5), 0 0 60px rgba(57,255,84,0.15);
     --glow-red:   0 0 20px rgba(255,56,56,0.5), 0 0 60px rgba(255,56,56,0.15);
   }
-
   html { scroll-behavior: smooth; }
-
   body {
     background-color: #0d0907;
     color: var(--parchment);
@@ -39,8 +35,6 @@
     overflow-x: hidden;
     cursor: crosshair;
   }
-
-  /* ── Stone texture overlay ──────────────────────────────── */
   body::before {
     content: '';
     position: fixed; inset: 0; z-index: 0;
@@ -49,93 +43,113 @@
       repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
     pointer-events: none;
   }
-
-  /* ── Ambient floating particles ─────────────────────────── */
-  .particles {
-    position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
-  }
-  .particle {
-    position: absolute;
-    border-radius: 50%;
-    animation: drift linear infinite;
-  }
+  .particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  .particle  { position: absolute; border-radius: 50%; animation: drift linear infinite; }
   @keyframes drift {
     0%   { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
     10%  { opacity: 1; }
     90%  { opacity: 0.6; }
     100% { transform: translateY(-10vh) translateX(var(--dx)) scale(1.5); opacity: 0; }
   }
-
-  /* ── Main wrapper ───────────────────────────────────────── */
   .wrapper { position: relative; z-index: 2; }
 
-  /* ── Hero section ───────────────────────────────────────── */
+  /* ── Music player ─────────────────────────────────────────── */
+  #music-bar {
+    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;
+    display: flex; align-items: center; gap: 0.75rem;
+    background: rgba(20,13,10,0.92);
+    border: 1px solid rgba(201,168,76,0.35);
+    padding: 0.65rem 1.1rem;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(201,168,76,0.1);
+    transition: opacity 0.3s;
+  }
+  #music-bar:hover { opacity: 1 !important; }
+  #music-toggle {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.2rem; line-height: 1;
+    color: var(--gold);
+    transition: transform 0.2s, color 0.2s;
+    padding: 0;
+  }
+  #music-toggle:hover { transform: scale(1.15); color: var(--gold-bright); }
+  .music-info { display: flex; flex-direction: column; gap: 0.1rem; }
+  .music-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+  .music-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: rgba(245,234,208,0.35);
+    letter-spacing: 0.05em;
+  }
+  /* animated sound bars when playing */
+  .sound-bars {
+    display: flex; align-items: flex-end; gap: 2px; height: 14px;
+  }
+  .sound-bars span {
+    display: block; width: 3px;
+    background: var(--gold);
+    border-radius: 1px;
+    animation: soundBar 0.8s ease-in-out infinite alternate;
+  }
+  .sound-bars span:nth-child(1) { animation-delay: 0s;    --h: 6px; }
+  .sound-bars span:nth-child(2) { animation-delay: 0.15s; --h: 12px; }
+  .sound-bars span:nth-child(3) { animation-delay: 0.3s;  --h: 8px; }
+  .sound-bars span:nth-child(4) { animation-delay: 0.1s;  --h: 14px; }
+  .sound-bars span:nth-child(5) { animation-delay: 0.25s; --h: 5px; }
+  @keyframes soundBar {
+    from { height: 3px; }
+    to   { height: var(--h); }
+  }
+  .sound-bars.paused span { animation-play-state: paused; height: 3px; }
+
+  /* ── Hero ─────────────────────────────────────────────────── */
   .hero {
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 4rem 2rem;
-    position: relative;
-    text-align: center;
+    position: relative; text-align: center;
   }
-
-  /* Radial spotlight behind title */
   .hero::before {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
+    content: ''; position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -60%);
     width: 800px; height: 600px;
     background: radial-gradient(ellipse, rgba(201,168,76,0.08) 0%, transparent 70%);
     pointer-events: none;
   }
-
-  /* Horizontal rule lines */
   .hero-rule {
-    width: 100%; max-width: 700px;
-    height: 1px;
+    width: 100%; max-width: 700px; height: 1px;
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    margin: 2rem 0;
-    position: relative;
+    margin: 2rem 0; position: relative;
     animation: fadeIn 2s ease forwards;
   }
   .hero-rule::before, .hero-rule::after {
-    content: '✦';
-    position: absolute; top: 50%; transform: translateY(-50%);
+    content: '✦'; position: absolute; top: 50%; transform: translateY(-50%);
     color: var(--gold); font-size: 0.8rem;
   }
   .hero-rule::before { left: 0; }
   .hero-rule::after  { right: 0; }
-
   .eyebrow {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 0.35em;
-    color: var(--gold-dim);
-    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 0.35em; color: var(--gold-dim); text-transform: uppercase;
     animation: fadeIn 1s ease 0.3s both;
   }
-
   .title {
-    font-family: 'Cinzel Decorative', serif;
-    font-weight: 900;
-    font-size: clamp(3.5rem, 10vw, 8rem);
-    line-height: 0.9;
-    color: var(--gold);
-    text-shadow: var(--glow-gold);
-    letter-spacing: -0.02em;
+    font-family: 'Cinzel Decorative', serif; font-weight: 900;
+    font-size: clamp(3.5rem, 10vw, 8rem); line-height: 0.9;
+    color: var(--gold); text-shadow: var(--glow-gold); letter-spacing: -0.02em;
     animation: titleReveal 1.5s cubic-bezier(0.16,1,0.3,1) 0.5s both;
   }
-
   .title span {
-    display: block;
-    font-size: clamp(2rem, 6vw, 4.5rem);
-    color: var(--parchment);
-    text-shadow: none;
-    letter-spacing: 0.15em;
-    font-weight: 400;
-    margin-top: 0.3em;
+    display: block; font-size: clamp(2rem, 6vw, 4.5rem);
+    color: var(--parchment); text-shadow: none;
+    letter-spacing: 0.15em; font-weight: 400; margin-top: 0.3em;
   }
-
   @keyframes titleReveal {
     from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
     to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
@@ -144,405 +158,134 @@
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
   .subtitle {
-    font-style: italic;
-    font-size: clamp(1rem, 2.5vw, 1.3rem);
-    color: rgba(245,234,208,0.6);
-    max-width: 540px;
-    line-height: 1.7;
+    font-style: italic; font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: rgba(245,234,208,0.6); max-width: 540px; line-height: 1.7;
     animation: fadeIn 1s ease 1.2s both;
   }
-
-  /* ── CTA Button ─────────────────────────────────────────── */
   .cta-group {
     display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
-    margin-top: 0.5rem;
-    animation: fadeIn 1s ease 1.5s both;
+    margin-top: 0.5rem; animation: fadeIn 1s ease 1.5s both;
   }
-
   .btn {
-    font-family: 'Cinzel', serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    text-decoration: none;
-    padding: 0.9rem 2.2rem;
-    border: 1px solid var(--gold);
-    color: var(--ink);
-    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: inline-block;
+    font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none;
+    padding: 0.9rem 2.2rem; border: 1px solid var(--gold);
+    color: var(--ink); background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    position: relative; overflow: hidden; transition: all 0.3s ease;
+    cursor: pointer; display: inline-block;
   }
   .btn::before {
-    content: '';
-    position: absolute; inset: 0;
+    content: ''; position: absolute; inset: 0;
     background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2));
-    transform: translateX(-100%) skewX(-15deg);
-    transition: transform 0.4s ease;
+    transform: translateX(-100%) skewX(-15deg); transition: transform 0.4s ease;
   }
   .btn:hover::before { transform: translateX(100%) skewX(-15deg); }
-  .btn:hover {
-    box-shadow: var(--glow-gold);
-    transform: translateY(-2px);
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--gold);
-  }
-  .btn-ghost:hover {
-    background: rgba(201,168,76,0.1);
-    color: var(--gold-bright);
-  }
-
-  /* Wand spark trail cursor effect */
+  .btn:hover { box-shadow: var(--glow-gold); transform: translateY(-2px); }
+  .btn-ghost { background: transparent; color: var(--gold); }
+  .btn-ghost:hover { background: rgba(201,168,76,0.1); color: var(--gold-bright); }
   .spark {
     position: fixed; pointer-events: none; z-index: 9999;
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--gold-bright);
-    transform: translate(-50%, -50%);
-    animation: sparkFade 0.6s ease forwards;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--gold-bright);
+    transform: translate(-50%, -50%); animation: sparkFade 0.6s ease forwards;
   }
   @keyframes sparkFade {
     0%   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
     100% { opacity: 0; transform: translate(-50%,-50%) scale(3); }
   }
-
-  /* ── Divider ────────────────────────────────────────────── */
   .section-divider {
     display: flex; align-items: center; gap: 1.5rem;
-    max-width: 900px; margin: 0 auto 4rem;
-    padding: 0 2rem;
+    max-width: 900px; margin: 0 auto 4rem; padding: 0 2rem;
   }
   .section-divider::before, .section-divider::after {
     content: ''; flex: 1; height: 1px;
     background: linear-gradient(90deg, transparent, var(--gold-dim));
   }
-  .section-divider::after {
-    background: linear-gradient(90deg, var(--gold-dim), transparent);
-  }
+  .section-divider::after { background: linear-gradient(90deg, var(--gold-dim), transparent); }
   .section-divider span {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 0.7rem;
-    color: var(--gold-dim);
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    white-space: nowrap;
+    font-family: 'Cinzel Decorative', serif; font-size: 0.7rem;
+    color: var(--gold-dim); letter-spacing: 0.3em; text-transform: uppercase; white-space: nowrap;
   }
-
-  /* ── Features grid ──────────────────────────────────────── */
-  .features {
-    padding: 6rem 2rem;
-    position: relative;
-  }
+  .features { padding: 6rem 2rem; position: relative; }
   .features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.5px;
-    max-width: 1000px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5px; max-width: 1000px; margin: 0 auto;
   }
-
   .feature-card {
-    background: var(--stone-mid);
-    padding: 2.5rem 2rem;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(201,168,76,0.12);
-    transition: all 0.4s ease;
-    cursor: default;
+    background: var(--stone-mid); padding: 2.5rem 2rem; position: relative;
+    overflow: hidden; border: 1px solid rgba(201,168,76,0.12);
+    transition: all 0.4s ease; cursor: default;
   }
   .feature-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 2px;
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    transform: scaleX(0);
-    transition: transform 0.4s ease;
+    transform: scaleX(0); transition: transform 0.4s ease;
   }
   .feature-card:hover::before { transform: scaleX(1); }
-  .feature-card:hover {
-    background: var(--stone-light);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  }
-
-  .feature-icon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    display: block;
-    filter: drop-shadow(0 0 8px rgba(201,168,76,0.4));
-  }
-  .feature-title {
-    font-family: 'Cinzel', serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--gold);
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-  }
-  .feature-desc {
-    font-size: 0.95rem;
-    line-height: 1.7;
-    color: rgba(245,234,208,0.65);
-    font-style: italic;
-  }
-
-  /* ── Spell showcase ─────────────────────────────────────── */
-  .spells-section {
-    padding: 4rem 2rem 6rem;
-    max-width: 900px; margin: 0 auto;
-  }
-  .section-title {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    color: var(--gold);
-    text-align: center;
-    margin-bottom: 0.5rem;
-  }
-  .section-sub {
-    text-align: center;
-    font-style: italic;
-    color: rgba(245,234,208,0.5);
-    margin-bottom: 3rem;
-    font-size: 0.95rem;
-  }
-
-  .spell-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-  .spell-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    padding: 1rem 1.2rem;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    cursor: default;
-  }
+  .feature-card:hover { background: var(--stone-light); transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; filter: drop-shadow(0 0 8px rgba(201,168,76,0.4)); }
+  .feature-title { font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.75rem; }
+  .feature-desc { font-size: 0.95rem; line-height: 1.7; color: rgba(245,234,208,0.65); font-style: italic; }
+  .spells-section { padding: 4rem 2rem 6rem; max-width: 900px; margin: 0 auto; }
+  .section-title { font-family: 'Cinzel Decorative', serif; font-size: clamp(1.5rem, 4vw, 2.5rem); color: var(--gold); text-align: center; margin-bottom: 0.5rem; }
+  .section-sub { text-align: center; font-style: italic; color: rgba(245,234,208,0.5); margin-bottom: 3rem; font-size: 0.95rem; }
+  .spell-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+  .spell-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 1rem 1.2rem; position: relative; overflow: hidden; transition: all 0.3s ease; cursor: default; }
   .spell-card:hover { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.05); }
   .spell-card:hover .spell-name { color: var(--gold-bright); }
-
-  .spell-name {
-    font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--parchment);
-    margin-bottom: 0.3rem;
-    transition: color 0.2s;
-  }
-  .spell-damage {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 0.2rem;
-  }
-  .spell-type {
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(245,234,208,0.35);
-    font-style: normal;
-    font-family: 'Share Tech Mono', monospace;
-  }
+  .spell-name { font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; color: var(--parchment); margin-bottom: 0.3rem; transition: color 0.2s; }
+  .spell-damage { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .spell-type { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,234,208,0.35); font-style: normal; font-family: 'Share Tech Mono', monospace; }
   .dmg-unforgivable { color: var(--green-spell); text-shadow: 0 0 10px rgba(57,255,84,0.5); }
   .dmg-dark         { color: #ff6b6b; }
   .dmg-blasting     { color: #ff9f43; }
   .dmg-fire         { color: #ffa502; }
   .dmg-shield       { color: #74b9ff; }
   .dmg-default      { color: var(--gold); }
-
-  /* ── Characters section ─────────────────────────────────── */
-  .characters-section {
-    padding: 4rem 2rem 6rem;
-    background: linear-gradient(180deg, transparent, rgba(201,168,76,0.03), transparent);
-  }
-  .char-grid {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem;
-    max-width: 1000px; margin: 0 auto;
-  }
-  .char-card {
-    width: 170px;
-    background: var(--stone-mid);
-    border: 1px solid rgba(201,168,76,0.15);
-    padding: 1.8rem 1.2rem 1.5rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    cursor: default;
-  }
+  .characters-section { padding: 4rem 2rem 6rem; background: linear-gradient(180deg, transparent, rgba(201,168,76,0.03), transparent); }
+  .char-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; max-width: 1000px; margin: 0 auto; }
+  .char-card { width: 170px; background: var(--stone-mid); border: 1px solid rgba(201,168,76,0.15); padding: 1.8rem 1.2rem 1.5rem; text-align: center; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); cursor: default; }
   .char-card:hover { transform: translateY(-8px) scale(1.03); border-color: var(--gold); }
   .char-card:hover .char-glyph { text-shadow: var(--glow-gold); transform: scale(1.2); }
-
-  .char-glyph {
-    font-size: 2.8rem;
-    display: block; margin-bottom: 0.8rem;
-    transition: all 0.3s ease;
-  }
-  .char-name {
-    font-family: 'Cinzel', serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--gold);
-    text-transform: uppercase;
-    margin-bottom: 0.3rem;
-  }
-  .char-title {
-    font-style: italic;
-    font-size: 0.72rem;
-    color: rgba(245,234,208,0.4);
-    line-height: 1.4;
-    margin-bottom: 0.8rem;
-  }
-  .char-stat {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.72rem;
-    color: rgba(245,234,208,0.6);
-    display: flex; justify-content: space-between;
-    margin-top: 0.3rem;
-  }
+  .char-glyph { font-size: 2.8rem; display: block; margin-bottom: 0.8rem; transition: all 0.3s ease; }
+  .char-name { font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.3rem; }
+  .char-title { font-style: italic; font-size: 0.72rem; color: rgba(245,234,208,0.4); line-height: 1.4; margin-bottom: 0.8rem; }
+  .char-stat { font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; color: rgba(245,234,208,0.6); display: flex; justify-content: space-between; margin-top: 0.3rem; }
   .char-stat span:last-child { color: var(--gold); }
-
-  /* ── Terminal showcase ──────────────────────────────────── */
-  .terminal-section {
-    padding: 4rem 2rem 6rem;
-    max-width: 800px; margin: 0 auto;
-  }
-  .terminal {
-    background: #0a0a0a;
-    border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 0;
-    overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.7), var(--glow-gold);
-  }
-  .terminal-bar {
-    background: #1a1a1a;
-    padding: 0.6rem 1rem;
-    display: flex; align-items: center; gap: 0.6rem;
-    border-bottom: 1px solid rgba(201,168,76,0.15);
-  }
-  .terminal-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-  }
-  .terminal-body {
-    padding: 1.5rem 1.5rem 2rem;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.82rem;
-    line-height: 1.8;
-    color: #ccc;
-    overflow: hidden;
-  }
-  .t-gold    { color: var(--gold-bright); }
-  .t-green   { color: var(--green-spell); }
-  .t-red     { color: var(--red-spell); }
-  .t-blue    { color: #74b9ff; }
-  .t-dim     { color: #555; }
-  .t-white   { color: #eee; }
-  .t-hp      { color: #2ecc71; }
-  .t-prompt  { color: var(--gold); }
-
-  /* Blinking cursor */
-  .cursor {
-    display: inline-block; width: 8px; height: 1em;
-    background: var(--gold); vertical-align: text-bottom;
-    animation: blink 1s step-end infinite;
-  }
+  .terminal-section { padding: 4rem 2rem 6rem; max-width: 800px; margin: 0 auto; }
+  .terminal { background: #0a0a0a; border: 1px solid rgba(201,168,76,0.3); border-radius: 0; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.7), var(--glow-gold); }
+  .terminal-bar { background: #1a1a1a; padding: 0.6rem 1rem; display: flex; align-items: center; gap: 0.6rem; border-bottom: 1px solid rgba(201,168,76,0.15); }
+  .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .terminal-body { padding: 1.5rem 1.5rem 2rem; font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; line-height: 1.8; color: #ccc; overflow: hidden; }
+  .t-gold   { color: var(--gold-bright); }
+  .t-green  { color: var(--green-spell); }
+  .t-red    { color: var(--red-spell); }
+  .t-blue   { color: #74b9ff; }
+  .t-dim    { color: #555; }
+  .t-white  { color: #eee; }
+  .t-hp     { color: #2ecc71; }
+  .t-prompt { color: var(--gold); }
+  .cursor { display: inline-block; width: 8px; height: 1em; background: var(--gold); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-  /* ── How to play ────────────────────────────────────────── */
-  .howto-section {
-    padding: 4rem 2rem 6rem;
-    max-width: 700px; margin: 0 auto;
-  }
-  .step {
-    display: flex; gap: 1.5rem; margin-bottom: 2.5rem;
-    opacity: 0; transform: translateX(-20px);
-    transition: all 0.5s ease;
-  }
+  .howto-section { padding: 4rem 2rem 6rem; max-width: 700px; margin: 0 auto; }
+  .step { display: flex; gap: 1.5rem; margin-bottom: 2.5rem; opacity: 0; transform: translateX(-20px); transition: all 0.5s ease; }
   .step.visible { opacity: 1; transform: translateX(0); }
-  .step-num {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 2.5rem;
-    color: rgba(201,168,76,0.2);
-    line-height: 1;
-    min-width: 2.5rem;
-    text-align: center;
-    flex-shrink: 0;
-  }
-  .step-content {}
-  .step-title {
-    font-family: 'Cinzel', serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--gold);
-    text-transform: uppercase;
-    margin-bottom: 0.4rem;
-  }
-  .step-desc {
-    font-style: italic;
-    font-size: 0.95rem;
-    line-height: 1.7;
-    color: rgba(245,234,208,0.6);
-  }
-  .step-code {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.8rem;
-    background: rgba(255,255,255,0.05);
-    border-left: 2px solid var(--gold-dim);
-    padding: 0.8rem 1rem;
-    margin-top: 0.8rem;
-    color: var(--green-spell);
-    white-space: pre;
-  }
-
-  /* ── Footer ─────────────────────────────────────────────── */
-  footer {
-    border-top: 1px solid rgba(201,168,76,0.15);
-    padding: 3rem 2rem;
-    text-align: center;
-  }
-  .footer-mark {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 1.5rem;
-    color: var(--gold-dim);
-    margin-bottom: 1rem;
-  }
-  .footer-text {
-    font-style: italic;
-    font-size: 0.85rem;
-    color: rgba(245,234,208,0.3);
-    line-height: 1.8;
-  }
-  .footer-text a {
-    color: var(--gold-dim);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
+  .step-num { font-family: 'Cinzel Decorative', serif; font-size: 2.5rem; color: rgba(201,168,76,0.2); line-height: 1; min-width: 2.5rem; text-align: center; flex-shrink: 0; }
+  .step-title { font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.4rem; }
+  .step-desc { font-style: italic; font-size: 0.95rem; line-height: 1.7; color: rgba(245,234,208,0.6); }
+  .step-code { font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; background: rgba(255,255,255,0.05); border-left: 2px solid var(--gold-dim); padding: 0.8rem 1rem; margin-top: 0.8rem; color: var(--green-spell); white-space: pre; }
+  footer { border-top: 1px solid rgba(201,168,76,0.15); padding: 3rem 2rem; text-align: center; }
+  .footer-mark { font-family: 'Cinzel Decorative', serif; font-size: 1.5rem; color: var(--gold-dim); margin-bottom: 1rem; }
+  .footer-text { font-style: italic; font-size: 0.85rem; color: rgba(245,234,208,0.3); line-height: 1.8; }
+  .footer-text a { color: var(--gold-dim); text-decoration: none; transition: color 0.2s; }
   .footer-text a:hover { color: var(--gold); }
-
-  /* ── Scroll-reveal utility ──────────────────────────────── */
-  .reveal {
-    opacity: 0; transform: translateY(24px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
-  }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
-
-  /* ── Responsive ─────────────────────────────────────────── */
   @media (max-width: 600px) {
     .title { font-size: 3rem; }
     .char-grid { gap: 1rem; }
     .char-card { width: 140px; }
+    #music-bar { bottom: 1rem; right: 1rem; padding: 0.5rem 0.8rem; }
   }
 </style>
 </head>
@@ -550,6 +293,29 @@
 
 <!-- ── Floating particles ──────────────────────────────────── -->
 <div class="particles" id="particles"></div>
+
+<!-- ── Music player bar ───────────────────────────────────── -->
+<div id="music-bar">
+  <button id="music-toggle" title="Play / Pause music">▶</button>
+  <div class="music-info">
+    <div class="music-title">Hedwig's Theme</div>
+    <div class="music-sub">John Williams · 1001</div>
+  </div>
+  <div class="sound-bars paused" id="sound-bars">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- Hidden YouTube iframe (audio only, muted visually, volume set via JS) -->
+<iframe
+  id="yt-player"
+  src="https://www.youtube.com/embed/UBnO_p7EjSc?autoplay=0&loop=1&playlist=UBnO_p7EjSc&controls=0&enablejsapi=1&origin=https://albertstevenmendoza-byte.github.io"
+  style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;left:0;"
+  allow="autoplay; encrypted-media"
+  frameborder="0">
+</iframe>
+
+<div class="wrapper">
 
 <!-- ── HERO ───────────────────────────────────────────────── -->
 <section class="hero">
@@ -592,7 +358,7 @@
     <div class="feature-card">
       <span class="feature-icon">⚖️</span>
       <div class="feature-title">Diminishing Returns</div>
-      <p class="feature-desc">Cast the same spell twice in a row and it deals only 50 % damage. Variety wins duels.</p>
+      <p class="feature-desc">Cast the same spell twice in a row and it deals only 50% damage. Variety wins duels.</p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">🏆</span>
@@ -708,17 +474,15 @@
   <div class="section-divider"><span>Get Started</span></div>
   <h2 class="section-title" style="margin-bottom:.5rem">Installation</h2>
   <p class="section-sub" style="margin-bottom:3rem">Three commands. Then duel.</p>
-
   <div class="step" id="step1">
     <div class="step-num">1</div>
     <div class="step-content">
       <div class="step-title">Clone the repository</div>
       <p class="step-desc">Download the project to your machine.</p>
-      <div class="step-code">git clone https://github.com/YOUR_USERNAME/hp-duel.git
-cd hp-duel</div>
+      <div class="step-code">git clone https://github.com/albertstevenmendoza-byte/harry-potter-game.git
+cd harry-potter-game</div>
     </div>
   </div>
-
   <div class="step" id="step2">
     <div class="step-num">2</div>
     <div class="step-content">
@@ -727,7 +491,6 @@ cd hp-duel</div>
       <div class="step-code">pip install -r requirements.txt</div>
     </div>
   </div>
-
   <div class="step" id="step3">
     <div class="step-num">3</div>
     <div class="step-content">
@@ -736,7 +499,6 @@ cd hp-duel</div>
       <div class="step-code">python hp_duel.py</div>
     </div>
   </div>
-
   <div class="step" id="step4">
     <div class="step-num">4</div>
     <div class="step-content">
@@ -753,41 +515,40 @@ cd hp-duel</div>
     Built with Python &amp; <a href="https://github.com/Textualize/rich" target="_blank">Rich</a>.<br/>
     All Harry Potter characters and spells are the intellectual property of J.K. Rowling and Warner Bros.<br/>
     This is a fan project made for educational and entertainment purposes only.<br/><br/>
-    <a href="https://github.com/albertstevenmendoza-byte/harry-potter-game" target="_blank">github.com/YOUR_USERNAME/hp-duel</a>
+    <a href="https://github.com/albertstevenmendoza-byte/harry-potter-game" target="_blank">github.com/albertstevenmendoza-byte/harry-potter-game</a>
   </div>
 </footer>
+
+</div><!-- end .wrapper -->
 
 <script>
 // ── Spell data ────────────────────────────────────────────────
 const spells = [
-  { name:"Avada Kedavra",     damage:80,  type:"unforgivable" },
-  { name:"Sectumsempra",      damage:55,  type:"dark"         },
-  { name:"Crucio",            damage:45,  type:"unforgivable" },
-  { name:"Expulso",           damage:42,  type:"blasting"     },
-  { name:"Confringo",         damage:40,  type:"blasting"     },
-  { name:"Bombarda",          damage:38,  type:"blasting"     },
-  { name:"Reducto",           damage:36,  type:"blasting"     },
-  { name:"Diffindo",          damage:35,  type:"severing"     },
-  { name:"Incendio",          damage:32,  type:"fire"         },
-  { name:"Stupefy",           damage:30,  type:"stunning"     },
-  { name:"Petrificus Totalus",damage:28,  type:"binding"      },
-  { name:"Expelliarmus",      damage:25,  type:"disarming"    },
-  { name:"Flipendo",          damage:22,  type:"knockback"    },
-  { name:"Imperio",           damage:20,  type:"unforgivable" },
-  { name:"Locomotor Mortis",  damage:18,  type:"binding"      },
-  { name:"Levicorpus",        damage:15,  type:"jinx"         },
-  { name:"Furnunculus",       damage:12,  type:"jinx"         },
-  { name:"Langlock",          damage:10,  type:"jinx"         },
-  { name:"Densaugeo",         damage:8,   type:"jinx"         },
-  { name:"Protego",           damage:-20, type:"shield"       },
+  { name:"Avada Kedavra",      damage:80,  type:"unforgivable" },
+  { name:"Sectumsempra",       damage:55,  type:"dark"         },
+  { name:"Crucio",             damage:45,  type:"unforgivable" },
+  { name:"Expulso",            damage:42,  type:"blasting"     },
+  { name:"Confringo",          damage:40,  type:"blasting"     },
+  { name:"Bombarda",           damage:38,  type:"blasting"     },
+  { name:"Reducto",            damage:36,  type:"blasting"     },
+  { name:"Diffindo",           damage:35,  type:"severing"     },
+  { name:"Incendio",           damage:32,  type:"fire"         },
+  { name:"Stupefy",            damage:30,  type:"stunning"     },
+  { name:"Petrificus Totalus", damage:28,  type:"binding"      },
+  { name:"Expelliarmus",       damage:25,  type:"disarming"    },
+  { name:"Flipendo",           damage:22,  type:"knockback"    },
+  { name:"Imperio",            damage:20,  type:"unforgivable" },
+  { name:"Locomotor Mortis",   damage:18,  type:"binding"      },
+  { name:"Levicorpus",         damage:15,  type:"jinx"         },
+  { name:"Furnunculus",        damage:12,  type:"jinx"         },
+  { name:"Langlock",           damage:10,  type:"jinx"         },
+  { name:"Densaugeo",          damage:8,   type:"jinx"         },
+  { name:"Protego",            damage:-20, type:"shield"       },
 ];
-
 const typeColor = {
   unforgivable:"dmg-unforgivable", dark:"dmg-dark",
-  blasting:"dmg-blasting", fire:"dmg-fire",
-  shield:"dmg-shield",
+  blasting:"dmg-blasting", fire:"dmg-fire", shield:"dmg-shield",
 };
-
 const grid = document.getElementById('spell-grid');
 spells.forEach(s => {
   const cls = typeColor[s.type] || 'dmg-default';
@@ -797,8 +558,7 @@ spells.forEach(s => {
       <div class="spell-name">${s.name}</div>
       <div class="spell-damage ${cls}">${dmgLabel}</div>
       <div class="spell-type">${s.type}</div>
-    </div>
-  `);
+    </div>`);
 });
 
 // ── Particles ────────────────────────────────────────────────
@@ -808,17 +568,13 @@ for (let i = 0; i < 28; i++) {
   const el = document.createElement('div');
   el.className = 'particle';
   const size = Math.random() * 3 + 1;
-  const left = Math.random() * 100;
-  const dur  = Math.random() * 18 + 12;
-  const del  = Math.random() * 15;
-  const dx   = (Math.random() - 0.5) * 160 + 'px';
   const col  = colors[Math.floor(Math.random() * colors.length)];
   el.style.cssText = `
-    width:${size}px; height:${size}px; left:${left}%;
-    background:${col}; --dx:${dx};
-    animation-duration:${dur}s; animation-delay:-${del}s;
-    box-shadow: 0 0 ${size*3}px ${col};
-  `;
+    width:${size}px; height:${size}px; left:${Math.random()*100}%;
+    background:${col}; --dx:${(Math.random()-.5)*160}px;
+    animation-duration:${Math.random()*18+12}s;
+    animation-delay:-${Math.random()*15}s;
+    box-shadow:0 0 ${size*3}px ${col};`;
   pc.appendChild(el);
 }
 
@@ -839,30 +595,43 @@ document.addEventListener('mousemove', e => {
 
 // ── Scroll reveal ────────────────────────────────────────────
 const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      observer.unobserve(e.target);
-    }
-  });
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
 }, { threshold: 0.12 });
-
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-// Steps reveal with stagger
 const stepObs = new IntersectionObserver(entries => {
   entries.forEach(e => {
     if (e.isIntersecting) {
-      const steps = document.querySelectorAll('.step');
-      steps.forEach((s, i) => {
-        setTimeout(() => s.classList.add('visible'), i * 180);
-      });
+      document.querySelectorAll('.step').forEach((s, i) => setTimeout(() => s.classList.add('visible'), i * 180));
       stepObs.disconnect();
     }
   });
 }, { threshold: 0.1 });
 const firstStep = document.getElementById('step1');
 if (firstStep) stepObs.observe(firstStep);
+
+// ── Music player ─────────────────────────────────────────────
+const toggleBtn  = document.getElementById('music-toggle');
+const soundBars  = document.getElementById('sound-bars');
+const ytPlayer   = document.getElementById('yt-player');
+let playing = false;
+
+function setPlaying(state) {
+  playing = state;
+  toggleBtn.textContent = playing ? '⏸' : '▶';
+  soundBars.classList.toggle('paused', !playing);
+  // Control YouTube iframe via postMessage (YouTube IFrame API)
+  const cmd = playing ? '{"event":"command","func":"playVideo","args":""}' : '{"event":"command","func":"pauseVideo","args":""}';
+  ytPlayer.contentWindow.postMessage(cmd, '*');
+}
+
+toggleBtn.addEventListener('click', () => setPlaying(!playing));
+
+// Fade music bar slightly when not hovered
+const musicBar = document.getElementById('music-bar');
+setTimeout(() => { musicBar.style.opacity = '0.6'; }, 3000);
+musicBar.addEventListener('mouseenter', () => musicBar.style.opacity = '1');
+musicBar.addEventListener('mouseleave', () => { if (!playing) musicBar.style.opacity = '0.6'; });
 </script>
 </body>
 </html>
