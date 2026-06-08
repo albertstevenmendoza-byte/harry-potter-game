@@ -1252,7 +1252,7 @@ $('btn-join').addEventListener('click',()=>{
   if(!id){$('lobby-status').textContent='Enter a Room ID first.';$('lobby-status').className='status-msg status-err';return;}
   $('lobby-status').textContent='Connecting…';$('lobby-status').className='status-msg status-wait';
   G.isHost=false;
-  const c=G.peer.connect(id,{reliable:true,serialization:'none'});
+  const c=G.peer.connect(id,{reliable:true});
   setupConn(c);
   c.on('error',e=>{$('lobby-status').textContent='Could not connect to that Room ID.';$('lobby-status').className='status-msg status-err';});
 });
