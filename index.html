@@ -1,637 +1,1353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HP Duel — Wizarding Duels in Your Terminal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HP Duel — Online 3D Wizarding Duels</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --gold:       #c9a84c;
-    --gold-dim:   #7a5c1e;
-    --gold-bright:#f0d080;
-    --green-dark: #0a1f0a;
-    --green-spell:#39ff54;
-    --red-spell:  #ff3838;
-    --parchment:  #f5ead0;
-    --ink:        #1a0a00;
-    --stone:      #1c1412;
-    --stone-mid:  #2a1f1a;
-    --stone-light:#3d2e26;
-    --white-dim:  rgba(255,255,255,0.08);
-    --glow-gold:  0 0 20px rgba(201,168,76,0.6), 0 0 60px rgba(201,168,76,0.2);
-    --glow-green: 0 0 20px rgba(57,255,84,0.5), 0 0 60px rgba(57,255,84,0.15);
-    --glow-red:   0 0 20px rgba(255,56,56,0.5), 0 0 60px rgba(255,56,56,0.15);
-  }
-  html { scroll-behavior: smooth; }
-  body {
-    background-color: #0d0907;
-    color: var(--parchment);
-    font-family: 'IM Fell English', Georgia, serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-    cursor: crosshair;
-  }
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0;
-    background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px),
-      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
-    pointer-events: none;
-  }
-  .particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
-  .particle  { position: absolute; border-radius: 50%; animation: drift linear infinite; }
-  @keyframes drift {
-    0%   { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 0.6; }
-    100% { transform: translateY(-10vh) translateX(var(--dx)) scale(1.5); opacity: 0; }
-  }
-  .wrapper { position: relative; z-index: 2; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c9a84c;--gold-b:#f0d080;--gold-d:#7a5c1e;
+  --parch:#f5ead0;--ink:#0d0907;
+  --red:#ff3838;--green:#39ff54;--blue:#74b9ff;--orange:#ff9f43;
+  --glow-gold:0 0 20px rgba(201,168,76,.7),0 0 60px rgba(201,168,76,.25);
+  --glow-red:0 0 20px rgba(255,56,56,.7);
+  --glow-green:0 0 20px rgba(57,255,84,.7);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#050302;
+  font-family:'IM Fell English',Georgia,serif;color:var(--parch);cursor:crosshair}
+canvas#c{display:block;position:fixed;inset:0;z-index:0}
 
-  /* ── Music player ─────────────────────────────────────────── */
-  #music-bar {
-    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;
-    display: flex; align-items: center; gap: 0.75rem;
-    background: rgba(20,13,10,0.92);
-    border: 1px solid rgba(201,168,76,0.35);
-    padding: 0.65rem 1.1rem;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(201,168,76,0.1);
-    transition: opacity 0.3s;
-  }
-  #music-bar:hover { opacity: 1 !important; }
-  #music-toggle {
-    background: none; border: none; cursor: pointer;
-    font-size: 1.2rem; line-height: 1;
-    color: var(--gold);
-    transition: transform 0.2s, color 0.2s;
-    padding: 0;
-  }
-  #music-toggle:hover { transform: scale(1.15); color: var(--gold-bright); }
-  .music-info { display: flex; flex-direction: column; gap: 0.1rem; }
-  .music-title {
-    font-family: 'Cinzel', serif;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    color: var(--gold);
-    white-space: nowrap;
-  }
-  .music-sub {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.6rem;
-    color: rgba(245,234,208,0.35);
-    letter-spacing: 0.05em;
-  }
-  /* animated sound bars when playing */
-  .sound-bars {
-    display: flex; align-items: flex-end; gap: 2px; height: 14px;
-  }
-  .sound-bars span {
-    display: block; width: 3px;
-    background: var(--gold);
-    border-radius: 1px;
-    animation: soundBar 0.8s ease-in-out infinite alternate;
-  }
-  .sound-bars span:nth-child(1) { animation-delay: 0s;    --h: 6px; }
-  .sound-bars span:nth-child(2) { animation-delay: 0.15s; --h: 12px; }
-  .sound-bars span:nth-child(3) { animation-delay: 0.3s;  --h: 8px; }
-  .sound-bars span:nth-child(4) { animation-delay: 0.1s;  --h: 14px; }
-  .sound-bars span:nth-child(5) { animation-delay: 0.25s; --h: 5px; }
-  @keyframes soundBar {
-    from { height: 3px; }
-    to   { height: var(--h); }
-  }
-  .sound-bars.paused span { animation-play-state: paused; height: 3px; }
+/* ── SCREENS ─────────────────────────────────────────────── */
+.scr{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;transition:opacity .5s,transform .5s;
+  pointer-events:auto;padding:1.5rem}
+.scr.off{opacity:0;pointer-events:none;transform:translateY(8px)}
 
-  /* ── Hero ─────────────────────────────────────────────────── */
-  .hero {
-    min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 4rem 2rem;
-    position: relative; text-align: center;
-  }
-  .hero::before {
-    content: ''; position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -60%);
-    width: 800px; height: 600px;
-    background: radial-gradient(ellipse, rgba(201,168,76,0.08) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .hero-rule {
-    width: 100%; max-width: 700px; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    margin: 2rem 0; position: relative;
-    animation: fadeIn 2s ease forwards;
-  }
-  .hero-rule::before, .hero-rule::after {
-    content: '✦'; position: absolute; top: 50%; transform: translateY(-50%);
-    color: var(--gold); font-size: 0.8rem;
-  }
-  .hero-rule::before { left: 0; }
-  .hero-rule::after  { right: 0; }
-  .eyebrow {
-    font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
-    letter-spacing: 0.35em; color: var(--gold-dim); text-transform: uppercase;
-    animation: fadeIn 1s ease 0.3s both;
-  }
-  .title {
-    font-family: 'Cinzel Decorative', serif; font-weight: 900;
-    font-size: clamp(3.5rem, 10vw, 8rem); line-height: 0.9;
-    color: var(--gold); text-shadow: var(--glow-gold); letter-spacing: -0.02em;
-    animation: titleReveal 1.5s cubic-bezier(0.16,1,0.3,1) 0.5s both;
-  }
-  .title span {
-    display: block; font-size: clamp(2rem, 6vw, 4.5rem);
-    color: var(--parchment); text-shadow: none;
-    letter-spacing: 0.15em; font-weight: 400; margin-top: 0.3em;
-  }
-  @keyframes titleReveal {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
-    to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .subtitle {
-    font-style: italic; font-size: clamp(1rem, 2.5vw, 1.3rem);
-    color: rgba(245,234,208,0.6); max-width: 540px; line-height: 1.7;
-    animation: fadeIn 1s ease 1.2s both;
-  }
-  .cta-group {
-    display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
-    margin-top: 0.5rem; animation: fadeIn 1s ease 1.5s both;
-  }
-  .btn {
-    font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 600;
-    letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none;
-    padding: 0.9rem 2.2rem; border: 1px solid var(--gold);
-    color: var(--ink); background: linear-gradient(135deg, var(--gold-bright), var(--gold));
-    position: relative; overflow: hidden; transition: all 0.3s ease;
-    cursor: pointer; display: inline-block;
-  }
-  .btn::before {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2));
-    transform: translateX(-100%) skewX(-15deg); transition: transform 0.4s ease;
-  }
-  .btn:hover::before { transform: translateX(100%) skewX(-15deg); }
-  .btn:hover { box-shadow: var(--glow-gold); transform: translateY(-2px); }
-  .btn-ghost { background: transparent; color: var(--gold); }
-  .btn-ghost:hover { background: rgba(201,168,76,0.1); color: var(--gold-bright); }
-  .spark {
-    position: fixed; pointer-events: none; z-index: 9999;
-    width: 6px; height: 6px; border-radius: 50%; background: var(--gold-bright);
-    transform: translate(-50%, -50%); animation: sparkFade 0.6s ease forwards;
-  }
-  @keyframes sparkFade {
-    0%   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-    100% { opacity: 0; transform: translate(-50%,-50%) scale(3); }
-  }
-  .section-divider {
-    display: flex; align-items: center; gap: 1.5rem;
-    max-width: 900px; margin: 0 auto 4rem; padding: 0 2rem;
-  }
-  .section-divider::before, .section-divider::after {
-    content: ''; flex: 1; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold-dim));
-  }
-  .section-divider::after { background: linear-gradient(90deg, var(--gold-dim), transparent); }
-  .section-divider span {
-    font-family: 'Cinzel Decorative', serif; font-size: 0.7rem;
-    color: var(--gold-dim); letter-spacing: 0.3em; text-transform: uppercase; white-space: nowrap;
-  }
-  .features { padding: 6rem 2rem; position: relative; }
-  .features-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.5px; max-width: 1000px; margin: 0 auto;
-  }
-  .feature-card {
-    background: var(--stone-mid); padding: 2.5rem 2rem; position: relative;
-    overflow: hidden; border: 1px solid rgba(201,168,76,0.12);
-    transition: all 0.4s ease; cursor: default;
-  }
-  .feature-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    transform: scaleX(0); transition: transform 0.4s ease;
-  }
-  .feature-card:hover::before { transform: scaleX(1); }
-  .feature-card:hover { background: var(--stone-light); transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-  .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; filter: drop-shadow(0 0 8px rgba(201,168,76,0.4)); }
-  .feature-title { font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.75rem; }
-  .feature-desc { font-size: 0.95rem; line-height: 1.7; color: rgba(245,234,208,0.65); font-style: italic; }
-  .spells-section { padding: 4rem 2rem 6rem; max-width: 900px; margin: 0 auto; }
-  .section-title { font-family: 'Cinzel Decorative', serif; font-size: clamp(1.5rem, 4vw, 2.5rem); color: var(--gold); text-align: center; margin-bottom: 0.5rem; }
-  .section-sub { text-align: center; font-style: italic; color: rgba(245,234,208,0.5); margin-bottom: 3rem; font-size: 0.95rem; }
-  .spell-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
-  .spell-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 1rem 1.2rem; position: relative; overflow: hidden; transition: all 0.3s ease; cursor: default; }
-  .spell-card:hover { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.05); }
-  .spell-card:hover .spell-name { color: var(--gold-bright); }
-  .spell-name { font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; color: var(--parchment); margin-bottom: 0.3rem; transition: color 0.2s; }
-  .spell-damage { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem; }
-  .spell-type { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,234,208,0.35); font-style: normal; font-family: 'Share Tech Mono', monospace; }
-  .dmg-unforgivable { color: var(--green-spell); text-shadow: 0 0 10px rgba(57,255,84,0.5); }
-  .dmg-dark         { color: #ff6b6b; }
-  .dmg-blasting     { color: #ff9f43; }
-  .dmg-fire         { color: #ffa502; }
-  .dmg-shield       { color: #74b9ff; }
-  .dmg-default      { color: var(--gold); }
-  .characters-section { padding: 4rem 2rem 6rem; background: linear-gradient(180deg, transparent, rgba(201,168,76,0.03), transparent); }
-  .char-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; max-width: 1000px; margin: 0 auto; }
-  .char-card { width: 170px; background: var(--stone-mid); border: 1px solid rgba(201,168,76,0.15); padding: 1.8rem 1.2rem 1.5rem; text-align: center; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); cursor: default; }
-  .char-card:hover { transform: translateY(-8px) scale(1.03); border-color: var(--gold); }
-  .char-card:hover .char-glyph { text-shadow: var(--glow-gold); transform: scale(1.2); }
-  .char-glyph { font-size: 2.8rem; display: block; margin-bottom: 0.8rem; transition: all 0.3s ease; }
-  .char-name { font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.3rem; }
-  .char-title { font-style: italic; font-size: 0.72rem; color: rgba(245,234,208,0.4); line-height: 1.4; margin-bottom: 0.8rem; }
-  .char-stat { font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; color: rgba(245,234,208,0.6); display: flex; justify-content: space-between; margin-top: 0.3rem; }
-  .char-stat span:last-child { color: var(--gold); }
-  .terminal-section { padding: 4rem 2rem 6rem; max-width: 800px; margin: 0 auto; }
-  .terminal { background: #0a0a0a; border: 1px solid rgba(201,168,76,0.3); border-radius: 0; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.7), var(--glow-gold); }
-  .terminal-bar { background: #1a1a1a; padding: 0.6rem 1rem; display: flex; align-items: center; gap: 0.6rem; border-bottom: 1px solid rgba(201,168,76,0.15); }
-  .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
-  .terminal-body { padding: 1.5rem 1.5rem 2rem; font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; line-height: 1.8; color: #ccc; overflow: hidden; }
-  .t-gold   { color: var(--gold-bright); }
-  .t-green  { color: var(--green-spell); }
-  .t-red    { color: var(--red-spell); }
-  .t-blue   { color: #74b9ff; }
-  .t-dim    { color: #555; }
-  .t-white  { color: #eee; }
-  .t-hp     { color: #2ecc71; }
-  .t-prompt { color: var(--gold); }
-  .cursor { display: inline-block; width: 8px; height: 1em; background: var(--gold); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-  .howto-section { padding: 4rem 2rem 6rem; max-width: 700px; margin: 0 auto; }
-  .step { display: flex; gap: 1.5rem; margin-bottom: 2.5rem; opacity: 0; transform: translateX(-20px); transition: all 0.5s ease; }
-  .step.visible { opacity: 1; transform: translateX(0); }
-  .step-num { font-family: 'Cinzel Decorative', serif; font-size: 2.5rem; color: rgba(201,168,76,0.2); line-height: 1; min-width: 2.5rem; text-align: center; flex-shrink: 0; }
-  .step-title { font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.4rem; }
-  .step-desc { font-style: italic; font-size: 0.95rem; line-height: 1.7; color: rgba(245,234,208,0.6); }
-  .step-code { font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; background: rgba(255,255,255,0.05); border-left: 2px solid var(--gold-dim); padding: 0.8rem 1rem; margin-top: 0.8rem; color: var(--green-spell); white-space: pre; }
-  footer { border-top: 1px solid rgba(201,168,76,0.15); padding: 3rem 2rem; text-align: center; }
-  .footer-mark { font-family: 'Cinzel Decorative', serif; font-size: 1.5rem; color: var(--gold-dim); margin-bottom: 1rem; }
-  .footer-text { font-style: italic; font-size: 0.85rem; color: rgba(245,234,208,0.3); line-height: 1.8; }
-  .footer-text a { color: var(--gold-dim); text-decoration: none; transition: color 0.2s; }
-  .footer-text a:hover { color: var(--gold); }
-  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-  @media (max-width: 600px) {
-    .title { font-size: 3rem; }
-    .char-grid { gap: 1rem; }
-    .char-card { width: 140px; }
-    #music-bar { bottom: 1rem; right: 1rem; padding: 0.5rem 0.8rem; }
-  }
+/* ── SPLASH ──────────────────────────────────────────────── */
+#s-splash{background:radial-gradient(ellipse at 50% 40%,#1a0e08,#020101)}
+#s-splash::before{content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c9a84c' fill-opacity='0.025'%3E%3Cpath d='M0 0h4v4H0zm8 0h4v4H8zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zM4 4h4v4H4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zM0 8h4v4H0z'/%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none}
+.big-title{font-family:'Cinzel Decorative',serif;font-weight:900;
+  font-size:clamp(3.5rem,10vw,8rem);line-height:.88;color:var(--gold);
+  text-shadow:var(--glow-gold);text-align:center;
+  animation:titleIn 1.6s cubic-bezier(.16,1,.3,1) .3s both}
+.big-title span{display:block;font-size:clamp(1.3rem,3.5vw,2.5rem);
+  color:var(--parch);text-shadow:none;letter-spacing:.2em;font-weight:400;margin-top:.35em}
+@keyframes titleIn{from{opacity:0;transform:translateY(40px) scale(.92);filter:blur(12px)}
+  to{opacity:1;transform:none;filter:none}}
+.gold-rule{width:min(640px,90vw);height:1px;margin:2rem 0;position:relative;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.gold-rule::before,.gold-rule::after{content:'✦';position:absolute;top:50%;
+  transform:translateY(-50%);color:var(--gold);font-size:.75rem}
+.gold-rule::before{left:0}.gold-rule::after{right:0}
+.lead{font-style:italic;color:rgba(245,234,208,.55);font-size:clamp(.9rem,2vw,1.15rem);
+  text-align:center;max-width:480px;line-height:1.8;margin-bottom:2.5rem;
+  animation:fadeUp 1s ease 1.2s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn{font-family:'Cinzel',serif;font-size:.85rem;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;padding:.9rem 2.8rem;
+  border:1px solid var(--gold);color:#1a0a00;
+  background:linear-gradient(135deg,var(--gold-b),var(--gold));
+  cursor:pointer;position:relative;overflow:hidden;transition:all .3s;display:inline-block}
+.btn::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,.2));
+  transform:translateX(-100%) skewX(-15deg);transition:transform .4s}
+.btn:hover::after{transform:translateX(120%) skewX(-15deg)}
+.btn:hover{box-shadow:var(--glow-gold);transform:translateY(-2px)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--gold)}
+.btn-ghost:hover{background:rgba(201,168,76,.08)}
+.btn-sm{font-size:.72rem;padding:.6rem 1.6rem}
+.btn-danger{border-color:var(--red);background:linear-gradient(135deg,#ff6b6b,var(--red));color:#fff}
+.btn-danger:hover{box-shadow:var(--glow-red)}
+
+/* ── LOBBY ───────────────────────────────────────────────── */
+#s-lobby{background:rgba(5,3,2,.97)}
+.lobby-box{background:rgba(26,18,14,.95);border:1px solid rgba(201,168,76,.2);
+  padding:2.5rem;max-width:480px;width:100%;text-align:center}
+.lobby-title{font-family:'Cinzel Decorative',serif;font-size:1.4rem;
+  color:var(--gold);margin-bottom:.4rem}
+.lobby-sub{font-style:italic;color:rgba(245,234,208,.45);font-size:.85rem;margin-bottom:2rem}
+.room-display{font-family:'Share Tech Mono',monospace;font-size:2.2rem;
+  letter-spacing:.18em;color:var(--gold-b);text-shadow:var(--glow-gold);
+  padding:1rem;background:rgba(0,0,0,.4);border:1px solid rgba(201,168,76,.3);
+  margin:1rem 0;word-break:break-all;cursor:pointer;transition:all .2s}
+.room-display:hover{background:rgba(201,168,76,.07)}
+.copy-hint{font-family:'Share Tech Mono',monospace;font-size:.62rem;
+  color:rgba(245,234,208,.3);margin-bottom:1.5rem}
+.or-divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;
+  background:rgba(201,168,76,.15)}
+.or-divider span{font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  color:rgba(245,234,208,.3);letter-spacing:.1em}
+.input-row{display:flex;gap:.6rem}
+.txt-input{flex:1;font-family:'Share Tech Mono',monospace;font-size:.9rem;
+  padding:.7rem 1rem;background:rgba(0,0,0,.5);border:1px solid rgba(201,168,76,.3);
+  color:var(--parch);outline:none;letter-spacing:.08em}
+.txt-input:focus{border-color:var(--gold);box-shadow:0 0 10px rgba(201,168,76,.15)}
+.txt-input::placeholder{color:rgba(245,234,208,.2)}
+.status-msg{font-family:'Share Tech Mono',monospace;font-size:.72rem;
+  margin-top:1rem;min-height:1.2rem;letter-spacing:.04em}
+.status-ok{color:var(--green)}.status-err{color:var(--red)}.status-wait{color:var(--gold)}
+
+/* ── CHAR/WAND SELECT ────────────────────────────────────── */
+#s-charsel,#s-wandsel{background:rgba(5,3,2,.97);overflow-y:auto}
+.sel-title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.1rem,3vw,1.7rem);
+  color:var(--gold);text-align:center;margin-bottom:.25rem}
+.sel-sub{font-style:italic;color:rgba(245,234,208,.45);font-size:.82rem;
+  text-align:center;margin-bottom:1.5rem}
+.card-grid{display:flex;flex-wrap:wrap;gap:.9rem;justify-content:center;
+  max-width:880px;margin-bottom:1.5rem}
+.c-card{width:150px;background:rgba(26,18,14,.9);border:2px solid rgba(201,168,76,.12);
+  padding:1.2rem .8rem 1rem;text-align:center;cursor:pointer;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);user-select:none}
+.c-card:hover,.c-card.sel{border-color:var(--gold);background:rgba(50,35,25,.95);
+  transform:translateY(-6px) scale(1.05);box-shadow:var(--glow-gold)}
+.c-card .glyph{font-size:2.4rem;display:block;margin-bottom:.4rem}
+.c-card .cname{font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;
+  letter-spacing:.06em;color:var(--gold);text-transform:uppercase;margin-bottom:.2rem}
+.c-card .clore{font-style:italic;font-size:.6rem;color:rgba(245,234,208,.38);
+  line-height:1.4;margin-bottom:.5rem}
+.c-card .cstat{font-family:'Share Tech Mono',monospace;font-size:.58rem;
+  color:rgba(245,234,208,.5);display:flex;justify-content:space-between;margin-top:.18rem}
+.c-card .cstat b{color:var(--gold-b)}
+.c-card.disabled{opacity:.3;pointer-events:none}
+
+/* ── HUD ─────────────────────────────────────────────────── */
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none;display:flex;flex-direction:column}
+#hud.off{display:none}
+.hud-top{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:1rem 1.2rem;gap:.8rem}
+.hp-block{flex:1;max-width:340px}
+.hp-block.right{text-align:right}
+.hp-name{font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.08em;color:var(--gold);text-transform:uppercase;margin-bottom:.25rem}
+.hp-wrap{height:13px;background:rgba(0,0,0,.55);border:1px solid rgba(201,168,76,.18);
+  overflow:hidden;position:relative}
+.hp-fill{height:100%;transition:width .45s ease;position:relative}
+.hp-fill::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.18),transparent)}
+.hp-txt{font-family:'Share Tech Mono',monospace;font-size:.58rem;
+  color:rgba(245,234,208,.55);margin-top:.18rem}
+.hud-mid{flex-shrink:0;text-align:center;padding-top:.7rem}
+.hud-round{font-family:'Cinzel Decorative',serif;font-size:.85rem;color:var(--gold)}
+.hud-stars{font-size:.85rem;letter-spacing:.08rem;margin-top:.1rem}
+.hud-bot{margin-top:auto;padding:1rem 1.2rem 1.4rem;display:flex;
+  flex-direction:column;align-items:center;gap:.5rem;pointer-events:auto}
+.turn-lbl{font-family:'Cinzel',serif;font-size:.78rem;font-style:italic;
+  color:rgba(245,234,208,.7);letter-spacing:.06em}
+.feedback{font-family:'Cinzel',serif;font-size:.82rem;text-align:center;
+  min-height:1.1rem;letter-spacing:.04em;text-shadow:0 0 10px currentColor}
+.cast-row{display:flex;gap:.5rem;width:min(520px,92vw)}
+#spell-input{flex:1;font-family:'Share Tech Mono',monospace;font-size:.9rem;
+  padding:.65rem 1rem;background:rgba(6,4,3,.9);border:1px solid rgba(201,168,76,.35);
+  color:var(--parch);outline:none;caret-color:var(--gold)}
+#spell-input:focus{border-color:var(--gold);box-shadow:0 0 14px rgba(201,168,76,.18)}
+#spell-input::placeholder{color:rgba(245,234,208,.18)}
+#spell-input:disabled{opacity:.4}
+.hud-hint{font-family:'Share Tech Mono',monospace;font-size:.6rem;
+  color:rgba(245,234,208,.22)}
+.waiting-lbl{font-family:'Cinzel',serif;font-size:.82rem;font-style:italic;
+  color:rgba(201,168,76,.6);letter-spacing:.06em;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* ── SPELL PANEL ─────────────────────────────────────────── */
+#spell-panel{position:fixed;bottom:8rem;left:50%;transform:translateX(-50%);
+  z-index:8;background:rgba(6,4,3,.97);border:1px solid rgba(201,168,76,.25);
+  padding:.9rem;max-width:660px;width:90vw;display:none;
+  max-height:48vh;overflow-y:auto}
+#spell-panel.open{display:block}
+#spell-panel h3{font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:.7rem;text-align:center}
+.sp-tbl{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:.64rem}
+.sp-tbl th{color:rgba(245,234,208,.35);padding:.18rem .45rem;text-align:left;
+  border-bottom:1px solid rgba(201,168,76,.12)}
+.sp-tbl td{padding:.22rem .45rem;color:rgba(245,234,208,.72);
+  border-bottom:1px solid rgba(255,255,255,.035)}
+.sp-tbl tr:hover td{background:rgba(201,168,76,.04)}
+.du{color:var(--green)}.dd{color:#ff6b6b}.db{color:var(--orange)}
+.df{color:#ffa502}.ds{color:var(--blue)}.dg{color:var(--gold)}
+
+/* ── OVERLAY ─────────────────────────────────────────────── */
+#overlay{position:fixed;inset:0;z-index:20;background:rgba(3,2,1,.9);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem}
+#overlay.off{display:none}
+.ov-title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.8rem,5vw,3.5rem);
+  color:var(--gold);text-shadow:var(--glow-gold);text-align:center}
+.ov-sub{font-style:italic;color:rgba(245,234,208,.55);font-size:.95rem;text-align:center}
+.ov-scores{display:flex;gap:2.5rem;align-items:center;margin:.4rem 0}
+.ov-ps{text-align:center}
+.ov-ps .pn{font-family:'Cinzel',serif;font-size:.72rem;color:var(--gold);
+  text-transform:uppercase;letter-spacing:.08em}
+.ov-ps .ps{font-size:1.1rem;letter-spacing:.1rem;display:block;margin-top:.18rem}
+
+/* ── FLOATING DMG NUMBERS ────────────────────────────────── */
+.dmg-float{position:fixed;font-family:'Cinzel Decorative',serif;font-size:2rem;
+  font-weight:900;pointer-events:none;z-index:15;
+  animation:floatUp 1.5s cubic-bezier(.2,1,.4,1) forwards}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-100px) scale(1.4)}}
+
+/* ── MUSIC BAR ───────────────────────────────────────────── */
+#mbar{position:fixed;top:.8rem;right:.8rem;z-index:30;display:flex;align-items:center;
+  gap:.55rem;background:rgba(6,4,3,.88);border:1px solid rgba(201,168,76,.22);
+  padding:.45rem .85rem;backdrop-filter:blur(10px);opacity:.65;transition:opacity .3s}
+#mbar:hover{opacity:1}
+#mtog{background:none;border:none;cursor:pointer;font-size:1rem;
+  color:var(--gold);padding:0;transition:transform .2s}
+#mtog:hover{transform:scale(1.15)}
+.mlbl{font-family:'Cinzel',serif;font-size:.58rem;color:rgba(245,234,208,.35);
+  letter-spacing:.06em;white-space:nowrap}
+.sbars{display:flex;align-items:flex-end;gap:2px;height:11px}
+.sbars span{display:block;width:3px;border-radius:1px;background:var(--gold);
+  animation:sb .8s ease-in-out infinite alternate}
+.sbars span:nth-child(1){--h:5px;animation-delay:0s}
+.sbars span:nth-child(2){--h:10px;animation-delay:.15s}
+.sbars span:nth-child(3){--h:7px;animation-delay:.3s}
+.sbars span:nth-child(4){--h:11px;animation-delay:.1s}
+.sbars span:nth-child(5){--h:4px;animation-delay:.25s}
+@keyframes sb{from{height:2px}to{height:var(--h)}}
+.sbars.paused span{animation-play-state:paused;height:2px}
+
+/* ── NETWORK STATUS BADGE ───────────────────────────────── */
+#netbadge{position:fixed;top:.8rem;left:.8rem;z-index:30;
+  font-family:'Share Tech Mono',monospace;font-size:.62rem;
+  padding:.35rem .75rem;border:1px solid;letter-spacing:.06em}
+.nb-conn{color:var(--green);border-color:rgba(57,255,84,.3);background:rgba(57,255,84,.06)}
+.nb-wait{color:var(--gold);border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.06)}
+.nb-disc{color:var(--red);border-color:rgba(255,56,56,.3);background:rgba(255,56,56,.06)}
 </style>
 </head>
 <body>
+<canvas id="c"></canvas>
 
-<!-- ── Floating particles ──────────────────────────────────── -->
-<div class="particles" id="particles"></div>
+<!-- ════ SPLASH ═══════════════════════════════════════════ -->
+<div class="scr" id="s-splash">
+  <div class="big-title">HP Duel<span>Online Wizarding Duels</span></div>
+  <div class="gold-rule"></div>
+  <p class="lead">Challenge a friend across the world. Cast real spells. Claim three rounds. Become legend.</p>
+  <button class="btn" id="btn-enter">⚡ Enter the Arena</button>
+</div>
 
-<!-- ── Music player bar ───────────────────────────────────── -->
-<div id="music-bar">
-  <button id="music-toggle" title="Play / Pause music">▶</button>
-  <div class="music-info">
-    <div class="music-title">Hedwig's Theme</div>
-    <div class="music-sub">John Williams · 1001</div>
-  </div>
-  <div class="sound-bars paused" id="sound-bars">
-    <span></span><span></span><span></span><span></span><span></span>
+<!-- ════ LOBBY ════════════════════════════════════════════ -->
+<div class="scr off" id="s-lobby">
+  <div class="lobby-box">
+    <div class="lobby-title">Dueling Lobby</div>
+    <div class="lobby-sub">Create a room or join one with a Room ID</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.65rem;color:rgba(245,234,208,.3);margin-bottom:.6rem">YOUR ROOM ID — share this with your opponent</div>
+    <div class="room-display" id="room-id-display" title="Click to copy">···</div>
+    <div class="copy-hint">↑ click to copy · connecting to server…</div>
+    <div class="or-divider"><span>OR JOIN A ROOM</span></div>
+    <div class="input-row">
+      <input class="txt-input" id="join-input" type="text" placeholder="Paste opponent's Room ID" maxlength="36" spellcheck="false" autocomplete="off"/>
+      <button class="btn btn-sm" id="btn-join">Join</button>
+    </div>
+    <div class="status-msg" id="lobby-status"></div>
   </div>
 </div>
 
-<!-- Hidden YouTube iframe (audio only, muted visually, volume set via JS) -->
-<iframe
-  id="yt-player"
-  src="https://www.youtube.com/embed/UBnO_p7EjSc?autoplay=0&loop=1&playlist=UBnO_p7EjSc&controls=0&enablejsapi=1&origin=https://albertstevenmendoza-byte.github.io"
-  style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;left:0;"
-  allow="autoplay; encrypted-media"
-  frameborder="0">
-</iframe>
+<!-- ════ CHARACTER SELECT ════════════════════════════════ -->
+<div class="scr off" id="s-charsel">
+  <div class="sel-title" id="charsel-title">Choose Your Character</div>
+  <div class="sel-sub">Your opponent is also selecting — first to confirm locks in</div>
+  <div class="card-grid" id="char-grid"></div>
+  <button class="btn" id="btn-charconfirm" disabled>Confirm Character →</button>
+</div>
 
-<div class="wrapper">
+<!-- ════ WAND SELECT ═════════════════════════════════════ -->
+<div class="scr off" id="s-wandsel">
+  <div class="sel-title" id="wandsel-title">Choose Your Wand</div>
+  <div class="sel-sub">Each wand grants a bonus to its affinity spell</div>
+  <div class="card-grid" id="wand-grid"></div>
+  <button class="btn" id="btn-wandconfirm" disabled>Confirm Wand →</button>
+</div>
 
-<!-- ── HERO ───────────────────────────────────────────────── -->
-<section class="hero">
-  <p class="eyebrow">A 2-player local dueling game</p>
-  <div class="hero-rule"></div>
-  <h1 class="title">HP Duel<span>Wizarding Duels</span></h1>
-  <div class="hero-rule"></div>
-  <p class="subtitle">
-    Cast canonical spells, outwit your opponent with strategy,
-    and claim three rounds to become the greatest witch or wizard
-    of your generation — all inside your terminal.
-  </p>
-  <div class="cta-group">
-    <a href="https://github.com/albertstevenmendoza-byte/harry-potter-game" class="btn" target="_blank" rel="noopener">
-      ⚡ View on GitHub
-    </a>
-    <a href="#how-to-play" class="btn btn-ghost">How to Play</a>
-  </div>
-</section>
-
-<!-- ── FEATURES ────────────────────────────────────────────── -->
-<section class="features">
-  <div class="section-divider"><span>The Game</span></div>
-  <div class="features-grid reveal">
-    <div class="feature-card">
-      <span class="feature-icon">🧙</span>
-      <div class="feature-title">5 Iconic Characters</div>
-      <p class="feature-desc">Harry, Hermione, Ron, Voldemort, or Snape — each with unique HP totals and spell-power multipliers.</p>
+<!-- ════ HUD ══════════════════════════════════════════════ -->
+<div id="hud" class="off">
+  <div class="hud-top">
+    <div class="hp-block" id="hp-you">
+      <div class="hp-name" id="hp-you-name">You</div>
+      <div class="hp-wrap"><div class="hp-fill" id="hp-you-bar" style="width:100%;background:linear-gradient(90deg,#27ae60,#2ecc71)"></div></div>
+      <div class="hp-txt" id="hp-you-txt">120 / 120</div>
     </div>
-    <div class="feature-card">
-      <span class="feature-icon">🪄</span>
-      <div class="feature-title">5 Legendary Wands</div>
-      <p class="feature-desc">Holly, Vine, Elder, Walnut, and Ash — each grants a damage bonus to its affinity spell.</p>
+    <div class="hud-mid">
+      <div class="hud-round" id="hud-round">Round 1</div>
+      <div class="hud-stars"><span id="hud-sy">☆☆☆</span>&nbsp;<span id="hud-so">☆☆☆</span></div>
     </div>
-    <div class="feature-card">
-      <span class="feature-icon">📜</span>
-      <div class="feature-title">20 Canonical Spells</div>
-      <p class="feature-desc">Type the real spell name or lose your turn. Expelliarmus to Avada Kedavra, all included.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">⚖️</span>
-      <div class="feature-title">Diminishing Returns</div>
-      <p class="feature-desc">Cast the same spell twice in a row and it deals only 50% damage. Variety wins duels.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🏆</span>
-      <div class="feature-title">Best-of-Five</div>
-      <p class="feature-desc">First player to claim three rounds wins the match. Every round is a fresh duel.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">✨</span>
-      <div class="feature-title">Rich Terminal UI</div>
-      <p class="feature-desc">Animated HP bars, coloured spell trajectories, character panels, and cinematic round transitions.</p>
+    <div class="hp-block right" id="hp-opp">
+      <div class="hp-name" id="hp-opp-name">Opponent</div>
+      <div class="hp-wrap"><div class="hp-fill" id="hp-opp-bar" style="width:100%;background:linear-gradient(90deg,#27ae60,#2ecc71)"></div></div>
+      <div class="hp-txt" id="hp-opp-txt">115 / 115</div>
     </div>
   </div>
-</section>
-
-<!-- ── SPELLS ────────────────────────────────────────────────  -->
-<section class="spells-section reveal">
-  <h2 class="section-title">The Spellbook</h2>
-  <p class="section-sub">Every spell is validated against this hardcoded registry. Type it wrong — lose your turn.</p>
-  <div class="spell-grid" id="spell-grid"></div>
-</section>
-
-<!-- ── CHARACTERS ─────────────────────────────────────────── -->
-<section class="characters-section reveal">
-  <h2 class="section-title" style="margin-bottom:.5rem">Choose Your Duelist</h2>
-  <p class="section-sub">Five witches and wizards. One winner.</p>
-  <div class="char-grid">
-    <div class="char-card">
-      <span class="char-glyph">⚡</span>
-      <div class="char-name">Harry Potter</div>
-      <div class="char-title">The Boy Who Lived</div>
-      <div class="char-stat"><span>HP</span><span>120</span></div>
-      <div class="char-stat"><span>Power</span><span>×1.10</span></div>
-      <div class="char-stat"><span>Sig</span><span>Expelliarmus</span></div>
+  <div class="hud-bot">
+    <div class="turn-lbl" id="turn-lbl">Waiting…</div>
+    <div class="feedback" id="feedback"></div>
+    <div class="cast-row">
+      <input id="spell-input" type="text" placeholder="Type a spell and press Enter…" autocomplete="off" spellcheck="false"/>
+      <button class="btn btn-sm" id="cast-btn">Cast ⚡</button>
     </div>
-    <div class="char-card">
-      <span class="char-glyph">📚</span>
-      <div class="char-name">Hermione</div>
-      <div class="char-title">Brightest Witch of Her Age</div>
-      <div class="char-stat"><span>HP</span><span>110</span></div>
-      <div class="char-stat"><span>Power</span><span>×1.20</span></div>
-      <div class="char-stat"><span>Sig</span><span>Stupefy</span></div>
-    </div>
-    <div class="char-card">
-      <span class="char-glyph">🦁</span>
-      <div class="char-name">Ron Weasley</div>
-      <div class="char-title">The Loyal Heart</div>
-      <div class="char-stat"><span>HP</span><span>130</span></div>
-      <div class="char-stat"><span>Power</span><span>×1.00</span></div>
-      <div class="char-stat"><span>Sig</span><span>Diffindo</span></div>
-    </div>
-    <div class="char-card">
-      <span class="char-glyph">☠</span>
-      <div class="char-name">Voldemort</div>
-      <div class="char-title">He Who Must Not Be Named</div>
-      <div class="char-stat"><span>HP</span><span>115</span></div>
-      <div class="char-stat"><span>Power</span><span>×1.35</span></div>
-      <div class="char-stat"><span>Sig</span><span>Avada Kedavra</span></div>
-    </div>
-    <div class="char-card">
-      <span class="char-glyph">🖤</span>
-      <div class="char-name">Snape</div>
-      <div class="char-title">The Half-Blood Prince</div>
-      <div class="char-stat"><span>HP</span><span>115</span></div>
-      <div class="char-stat"><span>Power</span><span>×1.25</span></div>
-      <div class="char-stat"><span>Sig</span><span>Sectumsempra</span></div>
-    </div>
+    <div class="hud-hint">Press <b>L</b> to list spells &nbsp;|&nbsp; <b>Enter</b> to cast</div>
   </div>
-</section>
+</div>
 
-<!-- ── TERMINAL PREVIEW ────────────────────────────────────── -->
-<section class="terminal-section reveal">
-  <h2 class="section-title" style="margin-bottom:.5rem">In the Arena</h2>
-  <p class="section-sub" style="margin-bottom:2rem">A glimpse of the dueling interface</p>
-  <div class="terminal">
-    <div class="terminal-bar">
-      <div class="terminal-dot" style="background:#ff5f56"></div>
-      <div class="terminal-dot" style="background:#ffbd2e"></div>
-      <div class="terminal-dot" style="background:#27c93f"></div>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:#555;margin-left:0.5rem">hp_duel.py</span>
-    </div>
-    <div class="terminal-body">
-<span class="t-gold">══════════════════════════════════════════════════════════</span>
-<span class="t-gold">  ⚡  ROUND 2  ⚡  (Best of 5)</span>
-<span class="t-gold">══════════════════════════════════════════════════════════</span>
+<!-- ════ SPELL PANEL ══════════════════════════════════════ -->
+<div id="spell-panel">
+  <h3>✦ Known Spells ✦</h3>
+  <table class="sp-tbl">
+    <thead><tr><th>Spell</th><th>Damage</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody id="sp-tbody"></tbody>
+  </table>
+</div>
 
-  <span class="t-white">Harry Potter</span>  <span class="t-dim">(Round wins: 1)</span>
-  HP: <span class="t-hp">████████████████░░░░░░░░░░░░  88/120</span>
-
-  <span class="t-white">Lord Voldemort</span>  <span class="t-dim">(Round wins: 0)</span>
-  HP: <span class="t-hp">████████████████████████████  115/115</span>
-
-<span class="t-dim">────────────────────────── Harry Potter's Turn ──────────</span>
-
-  <span class="t-dim">Last spell: Stupefy — casting again deals 50% damage.</span>
-  <span class="t-dim">(Type LIST to see all spells  |  QUIT to exit)</span>
-
-<span class="t-prompt">  ⚡  Harry Potter, cast your spell: </span><span class="t-white">sectumsempra</span>
-
-  <span class="t-red">─── ✨ ── ✨ ─── ✨ ──&gt;  SECTUMSEMPRA</span>
-  <span class="t-dim">Invisible blades cut through the air like a scythe.</span>
-
-  <span class="t-red">✨  Harry Potter casts Sectumsempra!</span>
-  <span class="t-white">Lord Voldemort takes </span><span class="t-red">69</span><span class="t-white"> damage!</span>
-     <span class="t-dim">Character bonus ×1.10</span>
-
-<span class="t-prompt">  ⚡  Lord Voldemort, cast your spell: </span><span class="cursor"></span>
-    </div>
+<!-- ════ ROUND/MATCH OVERLAY ══════════════════════════════ -->
+<div id="overlay" class="off">
+  <div class="ov-title" id="ov-title">Round Over</div>
+  <div class="gold-rule" style="margin:.6rem 0"></div>
+  <div class="ov-sub" id="ov-sub"></div>
+  <div class="ov-scores">
+    <div class="ov-ps"><div class="pn" id="ov-yn">You</div><span class="ps" id="ov-ys">☆☆☆</span></div>
+    <div style="font-family:'Cinzel Decorative',serif;color:var(--gold-d);font-size:.9rem">vs</div>
+    <div class="ov-ps"><div class="pn" id="ov-on">Opp</div><span class="ps" id="ov-os">☆☆☆</span></div>
   </div>
-</section>
+  <button class="btn" id="ov-btn">Continue</button>
+  <button class="btn btn-ghost btn-sm" id="ov-quit" style="margin-top:.3rem">Leave Duel</button>
+</div>
 
-<!-- ── HOW TO PLAY ─────────────────────────────────────────── -->
-<section class="howto-section" id="how-to-play">
-  <div class="section-divider"><span>Get Started</span></div>
-  <h2 class="section-title" style="margin-bottom:.5rem">Installation</h2>
-  <p class="section-sub" style="margin-bottom:3rem">Three commands. Then duel.</p>
-  <div class="step" id="step1">
-    <div class="step-num">1</div>
-    <div class="step-content">
-      <div class="step-title">Clone the repository</div>
-      <p class="step-desc">Download the project to your machine.</p>
-      <div class="step-code">git clone https://github.com/albertstevenmendoza-byte/harry-potter-game.git
-cd harry-potter-game</div>
-    </div>
-  </div>
-  <div class="step" id="step2">
-    <div class="step-num">2</div>
-    <div class="step-content">
-      <div class="step-title">Install the one dependency</div>
-      <p class="step-desc">Requires Python 3.10+ and the Rich library for the terminal UI.</p>
-      <div class="step-code">pip install -r requirements.txt</div>
-    </div>
-  </div>
-  <div class="step" id="step3">
-    <div class="step-num">3</div>
-    <div class="step-content">
-      <div class="step-title">Start the duel</div>
-      <p class="step-desc">Both players sit at the same keyboard. The game handles the rest.</p>
-      <div class="step-code">python hp_duel.py</div>
-    </div>
-  </div>
-  <div class="step" id="step4">
-    <div class="step-num">4</div>
-    <div class="step-content">
-      <div class="step-title">Remember the rules</div>
-      <p class="step-desc">Type a spell name on your turn. Type <strong style="color:var(--gold);font-style:normal">LIST</strong> for a free spell reference. First to win <strong style="color:var(--gold);font-style:normal">3 rounds</strong> wins the match. Casting the same spell twice in a row deals only <strong style="color:var(--red-spell);font-style:normal">50%</strong> damage — mix it up.</p>
-    </div>
-  </div>
-</section>
+<!-- ════ NET BADGE + MUSIC ════════════════════════════════ -->
+<div id="netbadge" class="nb-wait">⬤ Connecting…</div>
+<div id="mbar">
+  <button id="mtog">▶</button>
+  <div class="mlbl">Hedwig's Theme</div>
+  <div class="sbars paused" id="sbars"><span></span><span></span><span></span><span></span><span></span></div>
+</div>
+<iframe id="yt" src="https://www.youtube.com/embed/UBnO_p7EjSc?enablejsapi=1&loop=1&playlist=UBnO_p7EjSc&controls=0&origin=https://albertstevenmendoza-byte.github.io" style="position:fixed;width:1px;height:1px;opacity:0;bottom:0;left:0" allow="autoplay;encrypted-media" frameborder="0"></iframe>
 
-<!-- ── FOOTER ─────────────────────────────────────────────── -->
-<footer>
-  <div class="footer-mark">HP Duel</div>
-  <div class="footer-text">
-    Built with Python &amp; <a href="https://github.com/Textualize/rich" target="_blank">Rich</a>.<br/>
-    All Harry Potter characters and spells are the intellectual property of J.K. Rowling and Warner Bros.<br/>
-    This is a fan project made for educational and entertainment purposes only.<br/><br/>
-    <a href="https://github.com/albertstevenmendoza-byte/harry-potter-game" target="_blank">github.com/albertstevenmendoza-byte/harry-potter-game</a>
-  </div>
-</footer>
-
-</div><!-- end .wrapper -->
+<!-- ════ THREE.JS ═════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
+<!-- PeerJS for WebRTC P2P multiplayer -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
 <script>
-// ── Spell data ────────────────────────────────────────────────
-const spells = [
-  { name:"Avada Kedavra",      damage:80,  type:"unforgivable" },
-  { name:"Sectumsempra",       damage:55,  type:"dark"         },
-  { name:"Crucio",             damage:45,  type:"unforgivable" },
-  { name:"Expulso",            damage:42,  type:"blasting"     },
-  { name:"Confringo",          damage:40,  type:"blasting"     },
-  { name:"Bombarda",           damage:38,  type:"blasting"     },
-  { name:"Reducto",            damage:36,  type:"blasting"     },
-  { name:"Diffindo",           damage:35,  type:"severing"     },
-  { name:"Incendio",           damage:32,  type:"fire"         },
-  { name:"Stupefy",            damage:30,  type:"stunning"     },
-  { name:"Petrificus Totalus", damage:28,  type:"binding"      },
-  { name:"Expelliarmus",       damage:25,  type:"disarming"    },
-  { name:"Flipendo",           damage:22,  type:"knockback"    },
-  { name:"Imperio",            damage:20,  type:"unforgivable" },
-  { name:"Locomotor Mortis",   damage:18,  type:"binding"      },
-  { name:"Levicorpus",         damage:15,  type:"jinx"         },
-  { name:"Furnunculus",        damage:12,  type:"jinx"         },
-  { name:"Langlock",           damage:10,  type:"jinx"         },
-  { name:"Densaugeo",          damage:8,   type:"jinx"         },
-  { name:"Protego",            damage:-20, type:"shield"       },
-];
-const typeColor = {
-  unforgivable:"dmg-unforgivable", dark:"dmg-dark",
-  blasting:"dmg-blasting", fire:"dmg-fire", shield:"dmg-shield",
+'use strict';
+// ══════════════════════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════════════════════
+const SPELLS={
+  'expelliarmus':      {name:'Expelliarmus',      dmg:25, type:'disarming',   col:0xff3838,desc:'The Disarming Charm'},
+  'stupefy':           {name:'Stupefy',           dmg:30, type:'stunning',    col:0xff3838,desc:'The Stunning Spell'},
+  'avada kedavra':     {name:'Avada Kedavra',     dmg:80, type:'unforgivable',col:0x39ff54,desc:'The Killing Curse'},
+  'crucio':            {name:'Crucio',            dmg:45, type:'unforgivable',col:0xffff00,desc:'The Cruciatus Curse'},
+  'imperio':           {name:'Imperio',           dmg:20, type:'unforgivable',col:0xffff00,desc:'The Imperius Curse'},
+  'sectumsempra':      {name:'Sectumsempra',      dmg:55, type:'dark',        col:0xff0000,desc:'Dark slashing curse — Snape\'s invention'},
+  'protego':           {name:'Protego',           dmg:-20,type:'shield',      col:0x74b9ff,desc:'Shield Charm — restores up to 20 HP'},
+  'diffindo':          {name:'Diffindo',          dmg:35, type:'severing',    col:0xff5252,desc:'The Severing Charm'},
+  'confringo':         {name:'Confringo',         dmg:40, type:'blasting',    col:0xff9f43,desc:'The Blasting Curse'},
+  'bombarda':          {name:'Bombarda',          dmg:38, type:'blasting',    col:0xff9f43,desc:'Concussive explosion on impact'},
+  'incendio':          {name:'Incendio',          dmg:32, type:'fire',        col:0xffa502,desc:'The Fire-Making Spell'},
+  'flipendo':          {name:'Flipendo',          dmg:22, type:'knockback',   col:0x74b9ff,desc:'The Knockback Jinx'},
+  'locomotor mortis':  {name:'Locomotor Mortis',  dmg:18, type:'binding',     col:0xc56cf0,desc:'The Leg-Locker Curse'},
+  'petrificus totalus':{name:'Petrificus Totalus',dmg:28, type:'binding',     col:0x74b9ff,desc:'The Full Body-Bind Curse'},
+  'levicorpus':        {name:'Levicorpus',        dmg:15, type:'jinx',        col:0xffeaa7,desc:'Hoists the target upside-down'},
+  'expulso':           {name:'Expulso',           dmg:42, type:'blasting',    col:0xff9f43,desc:'Explosion from internal pressure'},
+  'reducto':           {name:'Reducto',           dmg:36, type:'blasting',    col:0x74b9ff,desc:'The Reductor Curse'},
+  'furnunculus':       {name:'Furnunculus',       dmg:12, type:'jinx',        col:0x55efc4,desc:'Causes painful boils'},
+  'langlock':          {name:'Langlock',          dmg:10, type:'jinx',        col:0xc56cf0,desc:'Glues tongue to the roof of the mouth'},
+  'densaugeo':         {name:'Densaugeo',         dmg:8,  type:'jinx',        col:0x55efc4,desc:'Causes teeth to enlarge grotesquely'},
 };
-const grid = document.getElementById('spell-grid');
-spells.forEach(s => {
-  const cls = typeColor[s.type] || 'dmg-default';
-  const dmgLabel = s.damage < 0 ? `+${Math.abs(s.damage)} HP` : s.damage;
-  grid.insertAdjacentHTML('beforeend', `
-    <div class="spell-card">
-      <div class="spell-name">${s.name}</div>
-      <div class="spell-damage ${cls}">${dmgLabel}</div>
-      <div class="spell-type">${s.type}</div>
-    </div>`);
-});
+const CHARS={
+  harry:    {name:'Harry Potter',    title:'The Boy Who Lived',         hp:120,bonus:1.10,glyph:'⚡',robeCol:0x8B0000,skinCol:0xd4a88a},
+  hermione: {name:'Hermione Granger',title:'Brightest Witch of Her Age',hp:110,bonus:1.20,glyph:'📚',robeCol:0x6c3483,skinCol:0xd4a88a},
+  ron:      {name:'Ron Weasley',     title:'The Loyal Heart',           hp:130,bonus:1.00,glyph:'🦁',robeCol:0x922b21,skinCol:0xe8b89a},
+  voldemort:{name:'Lord Voldemort',  title:'He Who Must Not Be Named',  hp:115,bonus:1.35,glyph:'☠',robeCol:0x1a1a2e,skinCol:0xe8e8d0},
+  snape:    {name:'Severus Snape',   title:'The Half-Blood Prince',     hp:115,bonus:1.25,glyph:'🖤',robeCol:0x111111,skinCol:0xc8b89a},
+};
+const WANDS={
+  holly:  {name:'Holly',   core:'Phoenix Feather',  icon:'🪄',mod:'expelliarmus',      bonus:1.15,flavor:'Good against the Dark Arts'},
+  vine:   {name:'Vine',    core:'Dragon Heartstring',icon:'🌿',mod:'petrificus totalus',bonus:1.15,flavor:'Seeks owners of hidden depths'},
+  elder:  {name:'Elder',   core:'Thestral Tail Hair',icon:'💀',mod:'avada kedavra',     bonus:1.20,flavor:'The most powerful wand ever made'},
+  walnut: {name:'Walnut',  core:'Dragon Heartstring',icon:'🌰',mod:'confringo',         bonus:1.15,flavor:'Powerful and demanding'},
+  ash:    {name:'Ash',     core:'Unicorn Hair',      icon:'🌾',mod:'expelliarmus',      bonus:1.15,flavor:'Loyal to its owner always'},
+};
+const ROUNDS_TO_WIN=3,REPEAT_PENALTY=.5,PROTEGO_CAP=20;
 
-// ── Particles ────────────────────────────────────────────────
-const pc = document.getElementById('particles');
-const colors = ['#c9a84c','#f0d080','#39ff54','#ff3838','#74b9ff'];
-for (let i = 0; i < 28; i++) {
-  const el = document.createElement('div');
-  el.className = 'particle';
-  const size = Math.random() * 3 + 1;
-  const col  = colors[Math.floor(Math.random() * colors.length)];
-  el.style.cssText = `
-    width:${size}px; height:${size}px; left:${Math.random()*100}%;
-    background:${col}; --dx:${(Math.random()-.5)*160}px;
-    animation-duration:${Math.random()*18+12}s;
-    animation-delay:-${Math.random()*15}s;
-    box-shadow:0 0 ${size*3}px ${col};`;
-  pc.appendChild(el);
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+const G={
+  phase:'splash',
+  isHost:false,
+  myRole:null,     // 'p1' or 'p2'
+  peer:null,
+  conn:null,
+  // selections
+  myChar:null, myWand:null,
+  oppChar:null,oppWand:null,
+  oppReady:false, myReady:false,
+  // round state
+  round:1, turn:null,  // 'p1'|'p2' whose turn it is
+  p1:{hp:0,maxHp:0,bonus:0,wandMod:null,wandBonus:0,rounds:0,lastSpell:null,charKey:null},
+  p2:{hp:0,maxHp:0,bonus:0,wandMod:null,wandBonus:0,rounds:0,lastSpell:null,charKey:null},
+  animating:false,
+};
+
+// ══════════════════════════════════════════════════════════════
+//  THREE.JS — ULTRA QUALITY SCENE
+// ══════════════════════════════════════════════════════════════
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.85;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x050202,.032);
+
+const camera=new THREE.PerspectiveCamera(52,1,.1,300);
+camera.position.set(0,7,16);
+camera.lookAt(0,1.2,0);
+
+function onResize(){
+  const w=innerWidth,h=innerHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
 }
+window.addEventListener('resize',onResize);onResize();
 
-// ── Wand-spark cursor ────────────────────────────────────────
-let sparkTimer = 0;
-document.addEventListener('mousemove', e => {
-  const now = Date.now();
-  if (now - sparkTimer < 50) return;
-  sparkTimer = now;
-  const spark = document.createElement('div');
-  spark.className = 'spark';
-  spark.style.left = e.clientX + 'px';
-  spark.style.top  = e.clientY + 'px';
-  spark.style.background = colors[Math.floor(Math.random()*colors.length)];
-  document.body.appendChild(spark);
-  setTimeout(() => spark.remove(), 600);
-});
-
-// ── Scroll reveal ────────────────────────────────────────────
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
-}, { threshold: 0.12 });
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-const stepObs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      document.querySelectorAll('.step').forEach((s, i) => setTimeout(() => s.classList.add('visible'), i * 180));
-      stepObs.disconnect();
+// ── Procedural stone texture ───────────────────────────────
+function stoneCanvas(W,H,base,mortar,noise=.04){
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=base;ctx.fillRect(0,0,W,H);
+  // random block variation
+  for(let y=0;y<H;y+=40){
+    for(let x=0;x<W;x+=80){
+      const v=Math.random()*.06-.03;
+      ctx.fillStyle=`rgba(${v>0?255:0},${v>0?200:0},0,${Math.abs(v)})`;
+      ctx.fillRect(x+1,y+1,79,39);
     }
-  });
-}, { threshold: 0.1 });
-const firstStep = document.getElementById('step1');
-if (firstStep) stepObs.observe(firstStep);
-
-// ── Music player ─────────────────────────────────────────────
-const toggleBtn  = document.getElementById('music-toggle');
-const soundBars  = document.getElementById('sound-bars');
-const ytPlayer   = document.getElementById('yt-player');
-let playing = false;
-
-function setPlaying(state) {
-  playing = state;
-  toggleBtn.textContent = playing ? '⏸' : '▶';
-  soundBars.classList.toggle('paused', !playing);
-  // Control YouTube iframe via postMessage (YouTube IFrame API)
-  const cmd = playing ? '{"event":"command","func":"playVideo","args":""}' : '{"event":"command","func":"pauseVideo","args":""}';
-  ytPlayer.contentWindow.postMessage(cmd, '*');
+  }
+  // mortar grid
+  ctx.strokeStyle=mortar;ctx.lineWidth=1.5;
+  for(let y=0;y<=H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  for(let y=0;y<H;y+=40){
+    const off=((y/40)%2===0)?0:40;
+    for(let x=off;x<=W;x+=80){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+40);ctx.stroke()}
+  }
+  // grain
+  const id=ctx.getImageData(0,0,W,H);
+  for(let i=0;i<id.data.length;i+=4){
+    const n=(Math.random()-.5)*40*noise;
+    id.data[i]=Math.min(255,Math.max(0,id.data[i]+n));
+    id.data[i+1]=Math.min(255,Math.max(0,id.data[i+1]+n));
+    id.data[i+2]=Math.min(255,Math.max(0,id.data[i+2]+n));
+  }
+  ctx.putImageData(id,0,0);
+  const t=new THREE.CanvasTexture(cv);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  return t;
 }
 
-toggleBtn.addEventListener('click', () => setPlaying(!playing));
+// Normal-map approximation from texture
+function makeNormalMap(diffuseTex,scale=3){
+  const cv=document.createElement('canvas');cv.width=128;cv.height=128;
+  const ctx=cv.getContext('2d');
+  // Draw source shrunk
+  const src=diffuseTex.source.data;
+  ctx.drawImage(src,0,0,128,128);
+  const id=ctx.getImageData(0,0,128,128);
+  const out=ctx.createImageData(128,128);
+  for(let y=1;y<127;y++){for(let x=1;x<127;x++){
+    const i=(y*128+x)*4;
+    const il=((y*128+(x-1))*4);
+    const ir=((y*128+(x+1))*4);
+    const iu=(((y-1)*128+x)*4);
+    const id2=(((y+1)*128+x)*4);
+    const dx=(id.data[ir]-id.data[il])/255*scale;
+    const dy=(id.data[id2]-id.data[iu])/255*scale;
+    const nx=-dx;const ny=-dy;const nz=1;
+    const len=Math.sqrt(nx*nx+ny*ny+nz*nz);
+    out.data[i]=  Math.floor((nx/len*.5+.5)*255);
+    out.data[i+1]=Math.floor((ny/len*.5+.5)*255);
+    out.data[i+2]=Math.floor((nz/len*.5+.5)*255);
+    out.data[i+3]=255;
+  }}
+  ctx.putImageData(out,0,0);
+  return new THREE.CanvasTexture(cv);
+}
 
-// Fade music bar slightly when not hovered
-const musicBar = document.getElementById('music-bar');
-setTimeout(() => { musicBar.style.opacity = '0.6'; }, 3000);
-musicBar.addEventListener('mouseenter', () => musicBar.style.opacity = '1');
-musicBar.addEventListener('mouseleave', () => { if (!playing) musicBar.style.opacity = '0.6'; });
+// ── Environment (fake HDR via gradient sphere) ─────────────
+const envGeo=new THREE.SphereGeometry(120,32,16);
+const envMat=new THREE.MeshBasicMaterial({side:THREE.BackSide,
+  vertexColors:true,fog:false});
+const envColors=[];
+for(let i=0;i<envGeo.attributes.position.count;i++){
+  const y=envGeo.attributes.position.getY(i);
+  const t=(y+120)/240;
+  envColors.push(t*.04,t*.02,t*.01);
+}
+envGeo.setAttribute('color',new THREE.Float32BufferAttribute(envColors,3));
+scene.add(new THREE.Mesh(envGeo,envMat));
+
+// ── Floor ──────────────────────────────────────────────────
+const floorDiff=stoneCanvas(512,512,'#2a1e18','#110e0c',.06);
+floorDiff.repeat.set(5,3);
+const floorNorm=makeNormalMap(floorDiff);
+floorNorm.wrapS=floorNorm.wrapT=THREE.RepeatWrapping;floorNorm.repeat.set(5,3);
+const floorMesh=new THREE.Mesh(
+  new THREE.BoxGeometry(18,0.4,10),
+  new THREE.MeshStandardMaterial({map:floorDiff,normalMap:floorNorm,
+    normalScale:new THREE.Vector2(1.5,1.5),roughness:.88,metalness:.04,envMapIntensity:.3})
+);
+floorMesh.position.y=-.2;floorMesh.receiveShadow=true;scene.add(floorMesh);
+
+// Subtle floor reflection via second plane
+const reflMesh=new THREE.Mesh(new THREE.PlaneGeometry(18,10),
+  new THREE.MeshStandardMaterial({color:0x1a1210,metalness:.25,roughness:.6,
+    transparent:true,opacity:.18,envMapIntensity:.5}));
+reflMesh.rotation.x=-Math.PI/2;reflMesh.position.y=.001;scene.add(reflMesh);
+
+// ── Walls ──────────────────────────────────────────────────
+const wallDiff=stoneCanvas(512,256,'#1c1410','#0e0c0a',.04);
+wallDiff.repeat.set(3.5,1.5);
+const wallNorm=makeNormalMap(wallDiff);
+wallNorm.wrapS=wallNorm.wrapT=THREE.RepeatWrapping;wallNorm.repeat.set(3.5,1.5);
+const wallMat=new THREE.MeshStandardMaterial({map:wallDiff,normalMap:wallNorm,
+  normalScale:new THREE.Vector2(2,2),roughness:.95,metalness:0});
+
+// Back wall
+const bwall=new THREE.Mesh(new THREE.BoxGeometry(20,12,.5),wallMat);
+bwall.position.set(0,5.6,-5.2);bwall.receiveShadow=true;scene.add(bwall);
+// Side walls
+[-9.3,9.3].forEach(x=>{
+  const sw=new THREE.Mesh(new THREE.BoxGeometry(.5,12,11),wallMat.clone());
+  sw.position.set(x,5.6,-.5);sw.receiveShadow=true;scene.add(sw);
+});
+// Ceiling
+const ceil=new THREE.Mesh(new THREE.BoxGeometry(20,.5,12),wallMat.clone());
+ceil.position.set(0,11,-.5);scene.add(ceil);
+
+// Archway columns
+[-8,8].forEach(x=>{
+  const col=new THREE.Mesh(new THREE.CylinderGeometry(.5,.6,10,12),wallMat.clone());
+  col.position.set(x,5,4.8);col.castShadow=true;col.receiveShadow=true;scene.add(col);
+});
+
+// ── Torches ────────────────────────────────────────────────
+const torchData=[[-6.5,3,-4.2],[6.5,3,-4.2],[-6.5,3,2],[6.5,3,2]];
+const torchLights=[];
+torchData.forEach(([x,y,z])=>{
+  // Bracket
+  const bkt=new THREE.Mesh(new THREE.BoxGeometry(.18,.5,.18),
+    new THREE.MeshStandardMaterial({color:0x555,metalness:.8,roughness:.2}));
+  bkt.position.set(x,y,z);scene.add(bkt);
+  // Flame geometry
+  const flm=new THREE.Mesh(new THREE.SphereGeometry(.15,10,10),
+    new THREE.MeshBasicMaterial({color:0xff8c00}));
+  flm.position.set(x,y+.35,z);scene.add(flm);
+  // Inner bright core
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.07,8,8),
+    new THREE.MeshBasicMaterial({color:0xffff80}));
+  core.position.set(x,y+.38,z);scene.add(core);
+  // Point light
+  const pl=new THREE.PointLight(0xff5500,2.5,9,.8);
+  pl.position.set(x,y+.5,z);pl.castShadow=false;
+  scene.add(pl);torchLights.push({light:pl,flame:flm,core,x,y,z});
+});
+
+// ── Key lighting ───────────────────────────────────────────
+const ambLight=new THREE.AmbientLight(0x150a05,1.4);scene.add(ambLight);
+const keyLight=new THREE.DirectionalLight(0xfff3e0,.7);
+keyLight.position.set(3,10,6);keyLight.castShadow=true;
+keyLight.shadow.mapSize.set(2048,2048);
+keyLight.shadow.camera.near=.5;keyLight.shadow.camera.far=50;
+keyLight.shadow.camera.left=-12;keyLight.shadow.camera.right=12;
+keyLight.shadow.camera.top=12;keyLight.shadow.camera.bottom=-6;
+keyLight.shadow.bias=-.001;
+scene.add(keyLight);
+const rimLight=new THREE.DirectionalLight(0x3030ff,.25);
+rimLight.position.set(-5,4,-4);scene.add(rimLight);
+
+// ── Volumetric-style fog particles ────────────────────────
+const fogPts=[];
+(()=>{
+  const geo=new THREE.BufferGeometry();
+  const N=200;
+  const pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]=  (Math.random()-.5)*16;
+    pos[i*3+1]=Math.random()*3;
+    pos[i*3+2]=(Math.random()-.5)*8;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({color:0x553322,size:.35,transparent:true,
+    opacity:.12,sizeAttenuation:true,depthWrite:false});
+  const pts=new THREE.Points(geo,mat);
+  scene.add(pts);fogPts.push(pts);
+})();
+
+// ── Candles along window ledges ────────────────────────────
+[-7,-4,-1,2,5,7].forEach(x=>{
+  const wax=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.4,8),
+    new THREE.MeshStandardMaterial({color:0xf0e0c0,roughness:.9}));
+  wax.position.set(x,.22,-4.9);scene.add(wax);
+  const flame=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6),
+    new THREE.MeshBasicMaterial({color:0xff9f43}));
+  flame.position.set(x,.45,-4.9);scene.add(flame);
+  const cl=new THREE.PointLight(0xff6b2b,.4,2.5);
+  cl.position.set(x,.5,-4.9);scene.add(cl);
+  torchLights.push({light:cl,flame,core:flame,x,y:.5,z:-4.9,small:true});
+});
+
+// ── Wizard model factory ───────────────────────────────────
+function makeWizard(robeCol,skinCol,side){
+  const g=new THREE.Group();
+  const std=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85,metalness:0});
+  const cloth=c=>new THREE.MeshStandardMaterial({color:c,roughness:.95,metalness:0,
+    normalMap:makeNormalMap(stoneCanvas(64,64,'#555','#444',.02)),
+    normalScale:new THREE.Vector2(.3,.3)});
+
+  // Robe (tapered, layered)
+  const robe=new THREE.Mesh(new THREE.CylinderGeometry(.3,.5,1.6,12),cloth(robeCol));
+  robe.position.y=.8;robe.castShadow=true;g.add(robe);
+  // Shoulder cloak
+  const cloak=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.2,12),cloth(robeCol));
+  cloak.position.y=1.52;g.add(cloak);
+  // Neck
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.1,.12,.15,8),std(skinCol));
+  neck.position.y=1.7;g.add(neck);
+  // Head
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.28,20,16),std(skinCol));
+  head.position.y=2.02;head.castShadow=true;g.add(head);
+  // Eyes
+  [-1,1].forEach(ex=>{
+    const eye=new THREE.Mesh(new THREE.SphereGeometry(.04,8,8),
+      new THREE.MeshBasicMaterial({color:robeCol===0x1a1a2e?0xff0000:0x222233}));
+    eye.position.set(ex*.1,2.06,.25);g.add(eye);
+  });
+  // Hat brim
+  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.06,16),
+    new THREE.MeshStandardMaterial({color:0x111008,roughness:1}));
+  brim.position.y=2.32;g.add(brim);
+  // Hat cone
+  const hatTop=new THREE.Mesh(new THREE.ConeGeometry(.28,.65,12),
+    new THREE.MeshStandardMaterial({color:0x111008,roughness:.95}));
+  hatTop.position.y=2.67;g.add(hatTop);
+  // Wand arm
+  const armDir=side===1?1:-1;
+  const armPvt=new THREE.Group();
+  armPvt.position.set(armDir*.32,1.3,0);
+  const arm=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.58,8),cloth(robeCol));
+  arm.rotation.z=-armDir*.5;arm.position.y=.28;
+  armPvt.add(arm);
+  // Wand
+  const wand=new THREE.Mesh(new THREE.CylinderGeometry(.018,.025,.45,8),
+    new THREE.MeshStandardMaterial({color:0x6b4226,roughness:.6,metalness:.1}));
+  wand.rotation.z=-armDir*.5;wand.position.set(armDir*.32,.9,0);
+  // Wand tip glow point
+  const tipGlow=new THREE.PointLight(0xffffff,0,2.5);
+  tipGlow.position.set(armDir*.58,1.15,0);
+  g.add(armPvt,wand,tipGlow);
+  g._tipGlow=tipGlow;
+  g._armPvt=armPvt;
+  g._side=side;
+  return g;
+}
+
+let w1=null,w2=null;
+function buildWizards(){
+  if(w1)scene.remove(w1);if(w2)scene.remove(w2);
+  const mk=(role)=>{
+    const key=G[role+'Char']||'harry';
+    const wkey=G[role+'Wand']||'holly';
+    const c=CHARS[key];
+    return makeWizard(c.robeCol,c.skinCol,role==='p1'?1:2);
+  };
+  w1=mk(G.myRole==='p1'?'my':'opp'); w1.position.set(-3.5,0,0); scene.add(w1);
+  w2=mk(G.myRole==='p2'?'my':'opp'); w2.position.set(3.5,0,0); w2.rotation.y=Math.PI; scene.add(w2);
+}
+
+// ── Particle systems ───────────────────────────────────────
+const projectiles=[];  // flying spell bolts
+const vfx=[];          // hit bursts, shields, etc.
+
+function spellColor(spellKey){return SPELLS[spellKey]?.col||0xffffff}
+
+function fireProjectile(fromSide,spellKey){
+  const col=spellColor(spellKey);
+  const sx=fromSide===1?-3.5:3.5;
+  const ex=fromSide===1? 3.5:-3.5;
+
+  // Core bolt
+  const geo=new THREE.SphereGeometry(.2,12,12);
+  const mat=new THREE.MeshBasicMaterial({color:col});
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.set(sx,1.15,0);
+  // Glow halo
+  const halo=new THREE.Mesh(new THREE.SphereGeometry(.38,12,12),
+    new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.25,
+      side:THREE.BackSide,depthWrite:false}));
+  mesh.add(halo);
+  // Attached light
+  const pl=new THREE.PointLight(col,6,5);mesh.add(pl);
+  scene.add(mesh);
+
+  // Trail particles (Points)
+  const trailN=24;
+  const trailPos=new Float32Array(trailN*3);
+  const trailGeo=new THREE.BufferGeometry();
+  trailGeo.setAttribute('position',new THREE.BufferAttribute(trailPos,3));
+  const trailMat=new THREE.PointsMaterial({color:col,size:.18,transparent:true,
+    opacity:.6,sizeAttenuation:true,depthWrite:false});
+  const trail=new THREE.Points(trailGeo,trailMat);
+  scene.add(trail);
+
+  // History positions for trail
+  const history=Array.from({length:trailN},()=>new THREE.Vector3(sx,1.15,0));
+
+  projectiles.push({mesh,trail,trailPos,history,
+    sx,ex,fromSide,spellKey,col,life:0,maxLife:.55,done:false});
+}
+
+function spawnHitBurst(x,y,z,col,count=20){
+  for(let i=0;i<count;i++){
+    const r=Math.random()*.14+.04;
+    const m=new THREE.Mesh(new THREE.SphereGeometry(r,6,6),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:1}));
+    m.position.set(x,y,z);
+    const spd=Math.random()*6+1.5;
+    const ang=Math.random()*Math.PI*2;
+    const elev=Math.random()*Math.PI-.5;
+    const vx=Math.cos(ang)*Math.cos(elev)*spd;
+    const vy=Math.sin(elev)*spd+1;
+    const vz=Math.sin(ang)*Math.cos(elev)*spd*.4;
+    scene.add(m);
+    vfx.push({m,vx,vy,vz,life:0,maxLife:.7+Math.random()*.35,
+      type:'particle',col});
+  }
+  // Flash sphere
+  const flash=new THREE.Mesh(new THREE.SphereGeometry(1.2,12,12),
+    new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5,
+      side:THREE.FrontSide,depthWrite:false}));
+  flash.position.set(x,y,z);scene.add(flash);
+  vfx.push({m:flash,life:0,maxLife:.2,type:'flash'});
+  // Impact light
+  const il=new THREE.PointLight(col,12,6);il.position.set(x,y,z);scene.add(il);
+  vfx.push({m:il,life:0,maxLife:.3,type:'ilight'});
+}
+
+function spawnShield(x,y,z){
+  // Expanding ring
+  for(let i=0;i<3;i++){
+    const ring=new THREE.Mesh(
+      new THREE.RingGeometry(.1,1,32),
+      new THREE.MeshBasicMaterial({color:0x74b9ff,transparent:true,
+        opacity:.7,side:THREE.DoubleSide,depthWrite:false}));
+    ring.position.set(x,y+.5,z);ring.rotation.x=-Math.PI/2;
+    scene.add(ring);
+    vfx.push({m:ring,life:-i*.08,maxLife:.6,type:'ring'});
+  }
+  // Shield dome
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(1,16,16),
+    new THREE.MeshBasicMaterial({color:0x74b9ff,transparent:true,
+      opacity:.3,side:THREE.BackSide,depthWrite:false,wireframe:true}));
+  dome.position.set(x,1,z);scene.add(dome);
+  vfx.push({m:dome,life:0,maxLife:.5,type:'dome'});
+  const sl=new THREE.PointLight(0x74b9ff,8,5);sl.position.set(x,y,z);scene.add(sl);
+  vfx.push({m:sl,life:0,maxLife:.5,type:'ilight'});
+}
+
+// ── Post-processing: manual bloom via additive render pass ─
+// (No EffectComposer dependency — we fake bloom with lens flares on lights)
+
+// ── Animation loop ─────────────────────────────────────────
+const clock=new THREE.Clock();
+let T=0;
+// Camera bob for cinematic feel
+const camBase=new THREE.Vector3(0,7,16);
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.05);
+  T+=dt;
+
+  // Torch flicker
+  torchLights.forEach(({light,flame,core,x,y,z,small},i)=>{
+    const f=1.1+Math.sin(T*8+i*1.7)*.5+Math.random()*.2;
+    light.intensity=(small?.35:.28)*f*8;
+    if(flame.material){flame.material.color.setHex(
+      Math.random()>.7?0xffcc00:0xff8c00);}
+    if(core&&core!==flame){core.material.color.setHex(
+      Math.random()>.5?0xffff80:0xffffff);}
+  });
+
+  // Wizard idle animation
+  if(w1){
+    w1.position.y=Math.sin(T*1.1)*.05;
+    w1.rotation.y=Math.sin(T*.3)*.04;
+    if(w1._armPvt)w1._armPvt.rotation.z=Math.sin(T*1.5)*.06;
+  }
+  if(w2){
+    w2.position.y=Math.sin(T*1.1+1)*.05;
+    w2.rotation.y=Math.PI+Math.sin(T*.3+.8)*.04;
+    if(w2._armPvt)w2._armPvt.rotation.z=Math.sin(T*1.5+.5)*.06;
+  }
+
+  // Fog particles drift
+  fogPts.forEach(pts=>{
+    const pos=pts.geometry.attributes.position;
+    for(let i=0;i<pos.count;i++){
+      pos.setX(i,pos.getX(i)+Math.sin(T*.2+i)*.002);
+      let ny=pos.getY(i)+.003;if(ny>3)ny=0;
+      pos.setY(i,ny);
+    }
+    pos.needsUpdate=true;
+  });
+
+  // Camera subtle movement
+  camera.position.x=camBase.x+Math.sin(T*.15)*.08;
+  camera.position.y=camBase.y+Math.sin(T*.1)*.04;
+  camera.lookAt(0,1.2,Math.sin(T*.08)*.1);
+
+  // Projectiles
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p=projectiles[i];
+    p.life+=dt;
+    const t=p.life/p.maxLife;
+    if(t>1){
+      scene.remove(p.mesh);scene.remove(p.trail);
+      projectiles.splice(i,1);continue;
+    }
+    // Lerp position with arc
+    const newX=p.sx+(p.ex-p.sx)*t;
+    const newY=1.15+Math.sin(t*Math.PI)*.45;
+    p.mesh.position.set(newX,newY,0);
+    // Rotate bolt
+    p.mesh.rotation.z+=dt*8;
+
+    // Update trail history
+    p.history.unshift(p.mesh.position.clone());
+    p.history.pop();
+    for(let j=0;j<p.history.length;j++){
+      p.trailPos[j*3]=p.history[j].x;
+      p.trailPos[j*3+1]=p.history[j].y;
+      p.trailPos[j*3+2]=p.history[j].z;
+    }
+    p.trail.geometry.attributes.position.needsUpdate=true;
+    p.trail.material.opacity=.5*(1-t*.8);
+
+    // Check arrival
+    const arrived=p.fromSide===1?p.mesh.position.x>=p.ex-1:p.mesh.position.x<=p.ex+1;
+    if(arrived&&!p.done){
+      p.done=true;
+      const hx=p.fromSide===1?3.5:-3.5;
+      if(p.spellKey==='protego'){spawnShield(hx,0,0)}
+      else{spawnHitBurst(hx,1.2,0,p.col,p.spellKey==='avada kedavra'?30:18)}
+      // Shake target wizard
+      const wiz=p.fromSide===1?w2:w1;
+      if(wiz){let shk=0;const iv=setInterval(()=>{
+        wiz.position.x=(p.fromSide===1?3.5:-3.5)+(Math.random()-.5)*.15;
+        if(++shk>8){clearInterval(iv);wiz.position.x=p.fromSide===1?3.5:-3.5;}
+      },35);}
+    }
+  }
+
+  // VFX
+  for(let i=vfx.length-1;i>=0;i--){
+    const v=vfx[i];
+    v.life+=dt;
+    if(v.life<0)continue;
+    const t=v.life/v.maxLife;
+    if(t>1){scene.remove(v.m);vfx.splice(i,1);continue;}
+    if(v.type==='particle'){
+      v.m.position.x+=v.vx*dt;
+      v.m.position.y+=v.vy*dt;v.vy-=18*dt;
+      v.m.position.z+=v.vz*dt;
+      v.m.material.opacity=1-t;
+      v.m.scale.setScalar(1-t*.5);
+    }else if(v.type==='flash'){
+      v.m.material.opacity=.5*(1-t);
+      v.m.scale.setScalar(1+t*3);
+    }else if(v.type==='ring'){
+      v.m.scale.setScalar(1+t*4);
+      v.m.material.opacity=.7*(1-t);
+    }else if(v.type==='dome'){
+      v.m.material.opacity=.3*(1-t);
+      v.m.scale.setScalar(1+t*.5);
+    }else if(v.type==='ilight'){
+      v.m.intensity=12*(1-t);
+    }
+  }
+
+  renderer.render(scene,camera);
+}
+animate();
+
+// ══════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.add('off'));if(id){$(id).classList.remove('off');}}
+function hudOn(v){$('hud').classList.toggle('off',!v);}
+function setNet(txt,cls){const b=$('netbadge');b.textContent='⬤ '+txt;b.className='nb-'+cls;}
+
+// Build spell table
+(()=>{
+  const order=['unforgivable','dark','blasting','fire','severing','stunning','disarming','knockback','binding','jinx','shield'];
+  const cls={unforgivable:'du',dark:'dd',blasting:'db',fire:'df',shield:'ds'};
+  const sorted=Object.values(SPELLS).sort((a,b)=>b.dmg-a.dmg);
+  sorted.forEach(s=>{
+    const c=cls[s.type]||'dg';
+    const d=s.dmg<0?`<span class="${c}">+${Math.abs(s.dmg)} HP</span>`:`<span class="${c}">${s.dmg}</span>`;
+    $('sp-tbody').insertAdjacentHTML('beforeend',`<tr><td>${s.name}</td><td>${d}</td><td>${s.type}</td><td>${s.desc}</td></tr>`);
+  });
+})();
+
+// Build char cards
+(()=>{
+  const grid=$('char-grid');
+  Object.entries(CHARS).forEach(([k,c])=>{
+    const d=document.createElement('div');d.className='c-card';d.dataset.key=k;
+    d.innerHTML=`<span class="glyph">${c.glyph}</span>
+      <div class="cname">${c.name}</div><div class="clore">${c.title}</div>
+      <div class="cstat"><span>HP</span><b>${c.hp}</b></div>
+      <div class="cstat"><span>Power</span><b>×${c.bonus.toFixed(2)}</b></div>`;
+    d.addEventListener('click',()=>{
+      if(d.classList.contains('disabled'))return;
+      grid.querySelectorAll('.c-card').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');$('btn-charconfirm').disabled=false;
+    });
+    grid.appendChild(d);
+  });
+})();
+
+// Build wand cards
+(()=>{
+  const grid=$('wand-grid');
+  Object.entries(WANDS).forEach(([k,w])=>{
+    const d=document.createElement('div');d.className='c-card';d.dataset.key=k;
+    d.innerHTML=`<span class="glyph">${w.icon}</span>
+      <div class="cname">${w.name}</div>
+      <div class="clore">${w.core}<br/><em style="color:var(--gold);font-size:.58rem">${w.flavor}</em></div>
+      <div class="cstat"><span>Affinity</span><b>+${Math.round((w.bonus-1)*100)}%</b></div>
+      <div class="cstat"><span>Spell</span><b style="font-size:.55rem">${SPELLS[w.mod].name}</b></div>`;
+    d.addEventListener('click',()=>{
+      grid.querySelectorAll('.c-card').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');$('btn-wandconfirm').disabled=false;
+    });
+    grid.appendChild(d);
+  });
+})();
+
+function stars(n,max=3){return'★'.repeat(Math.min(n,max))+'☆'.repeat(Math.max(0,max-n))}
+function hpColor(p){if(p>.5)return'linear-gradient(90deg,#27ae60,#2ecc71)';if(p>.25)return'linear-gradient(90deg,#d68910,#f39c12)';return'linear-gradient(90deg,#922b21,#e74c3c)'}
+
+function updateHUD(){
+  const me=G.myRole==='p1'?G.p1:G.p2;
+  const opp=G.myRole==='p1'?G.p2:G.p1;
+  const mChar=CHARS[G.myChar||'harry'];const oChar=CHARS[G.oppChar||'harry'];
+  $('hp-you-name').textContent=mChar.name;
+  $('hp-opp-name').textContent=oChar.name;
+  const mp=Math.max(0,me.hp/me.maxHp);
+  const op=Math.max(0,opp.hp/opp.maxHp);
+  $('hp-you-bar').style.width=(mp*100)+'%';$('hp-you-bar').style.background=hpColor(mp);
+  $('hp-opp-bar').style.width=(op*100)+'%';$('hp-opp-bar').style.background=hpColor(op);
+  $('hp-you-txt').textContent=`${me.hp} / ${me.maxHp}`;
+  $('hp-opp-txt').textContent=`${opp.hp} / ${opp.maxHp}`;
+  $('hud-round').textContent=`Round ${G.round}`;
+  const mRnds=me.rounds;const oRnds=opp.rounds;
+  if(G.myRole==='p1'){$('hud-sy').textContent=stars(mRnds);$('hud-so').textContent=stars(oRnds);}
+  else{$('hud-sy').textContent=stars(mRnds);$('hud-so').textContent=stars(oRnds);}
+  const myTurn=G.turn===G.myRole;
+  $('turn-lbl').textContent=myTurn?'Your Turn — Cast a spell!':
+    `Waiting for ${oChar.name}…`;
+  $('spell-input').disabled=!myTurn||G.animating;
+  if(myTurn&&!G.animating)setTimeout(()=>$('spell-input').focus(),50);
+}
+
+function setFeedback(msg,col='rgba(240,208,128,.95)'){
+  const el=$('feedback');el.textContent=msg;el.style.color=col;
+  clearTimeout(el._t);el._t=setTimeout(()=>{if(el.textContent===msg)el.textContent=''},4000);
+}
+
+function floatDmg(txt,col,side){
+  const el=document.createElement('div');el.className='dmg-float';
+  el.textContent=txt;el.style.color=col;
+  el.style.left=(side==='you'?'22%':'68%');el.style.top='32%';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1500);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GAME LOGIC
+// ══════════════════════════════════════════════════════════════
+function getSpell(raw){return SPELLS[raw.trim().toLowerCase()]||null}
+
+function resolveDamage(spell,p){
+  if(spell.type==='shield'){
+    const h=Math.min(Math.ceil(Math.abs(spell.dmg)*p.bonus),PROTEGO_CAP);
+    return{dmg:-h,notes:[`Shield! +${h} HP`]};
+  }
+  let base=Math.ceil(spell.dmg*p.bonus);
+  const notes=[];
+  if(spell.name.toLowerCase()===p.wandMod){base=Math.ceil(base*p.wandBonus);notes.push('Wand affinity!');}
+  if(p.lastSpell&&p.lastSpell.toLowerCase()===spell.name.toLowerCase()){
+    base=Math.ceil(base*REPEAT_PENALTY);notes.push('Diminishing returns — 50% damage!');
+  }
+  return{dmg:Math.max(1,base),notes};
+}
+
+function initPlayer(slot,charKey,wandKey){
+  const c=CHARS[charKey],w=WANDS[wandKey];
+  G[slot].charKey=charKey;G[slot].hp=c.hp;G[slot].maxHp=c.hp;
+  G[slot].bonus=c.bonus;G[slot].wandMod=w.mod;G[slot].wandBonus=w.bonus;
+  G[slot].lastSpell=null;
+}
+
+function resetRound(){
+  G.p1.hp=G.p1.maxHp;G.p1.lastSpell=null;
+  G.p2.hp=G.p2.maxHp;G.p2.lastSpell=null;
+  G.turn='p1';G.animating=false;updateHUD();
+}
+
+// ── Apply cast locally and return result ───────────────────
+function applySpellLocal(casterRole,spellKey){
+  const caster=G[casterRole];
+  const targetRole=casterRole==='p1'?'p2':'p1';
+  const target=G[targetRole];
+  const spell=SPELLS[spellKey];
+  const{dmg,notes}=resolveDamage(spell,caster);
+  if(dmg<0){caster.hp=Math.min(caster.maxHp,caster.hp+Math.abs(dmg));}
+  else{target.hp=Math.max(0,target.hp-dmg);}
+  caster.lastSpell=spell.name;
+  return{dmg,notes,spell,casterRole,targetRole};
+}
+
+function showCastResult(result){
+  const{dmg,notes,spell,casterRole}=result;
+  const isMe=casterRole===G.myRole;
+  const cChar=CHARS[G[casterRole].charKey];
+  const fromSide=casterRole==='p1'?1:2;
+  if(spell.type==='shield'){
+    spawnShield(fromSide===1?-3.5:3.5,0,0);
+    floatDmg('+'+Math.abs(dmg)+' HP','#74b9ff',isMe?'you':'opp');
+    setFeedback(`${cChar.name} casts ${spell.name} — +${Math.abs(dmg)} HP!`,'#74b9ff');
+  } else {
+    fireProjectile(fromSide,spell.name.toLowerCase().replace(' ','_'));
+    setTimeout(()=>{
+      floatDmg('-'+dmg,'#ff4444',isMe?'opp':'you');
+      let msg=`${cChar.name} casts ${spell.name}! ${dmg} damage!`;
+      if(notes.length)msg+=` (${notes.join(', ')})`;
+      const col=spell.type==='unforgivable'?'#39ff54':spell.type==='dark'?'#ff6b6b':'#f0d080';
+      setFeedback(msg,col);
+    },350);
+  }
+}
+
+// ── The actual cast action called when it's your turn ──────
+function doCast(raw){
+  if(G.animating||G.phase!=='duel')return;
+  if(raw.trim().toUpperCase()==='L'){toggleSpellPanel();return;}
+  const spell=getSpell(raw);
+  if(!spell){
+    setFeedback(`"${raw}" is not a known spell — turn wasted!`,'#ff6b6b');
+    // Send waste to opponent
+    send({type:'waste',spell:raw});
+    G.turn=G.myRole==='p1'?'p2':'p1';
+    updateHUD();return;
+  }
+  G.animating=true;$('spell-input').disabled=true;
+  const spellKey=spell.name.toLowerCase();
+  // Send to peer first
+  send({type:'cast',spell:spellKey});
+  // Apply locally
+  const result=applySpellLocal(G.myRole,spellKey);
+  showCastResult(result);
+  setTimeout(()=>{
+    updateHUD();
+    G.animating=false;
+    if(!G.p1.hp||!G.p2.hp){endRound();}
+    else{G.turn=G.myRole==='p1'?'p2':'p1';updateHUD();}
+  },750);
+}
+
+function endRound(){
+  G.phase='roundover';hudOn(false);
+  const mySlot=G.myRole,oppSlot=mySlot==='p1'?'p2':'p1';
+  const myP=G[mySlot],oppP=G[oppSlot];
+  const iWon=myP.hp>0&&oppP.hp<=0;
+  const theyWon=oppP.hp>0&&myP.hp<=0;
+  const draw=myP.hp<=0&&oppP.hp<=0;
+  if(iWon||draw)myP.rounds++;
+  if(theyWon||draw)oppP.rounds++;
+
+  $('ov-yn').textContent=CHARS[G.myChar].name;
+  $('ov-on').textContent=CHARS[G.oppChar].name;
+  $('ov-ys').textContent=stars(myP.rounds);
+  $('ov-os').textContent=stars(oppP.rounds);
+
+  if(myP.rounds>=ROUNDS_TO_WIN||oppP.rounds>=ROUNDS_TO_WIN){
+    G.phase='matchover';
+    const iWonMatch=myP.rounds>=ROUNDS_TO_WIN;
+    $('ov-title').textContent=iWonMatch?'⚡ Victory!':'💀 Defeated!';
+    $('ov-sub').textContent=iWonMatch?`${CHARS[G.myChar].name} wins the match!`:`${CHARS[G.oppChar].name} wins the match!`;
+    $('ov-btn').textContent='Play Again';
+  } else {
+    $('ov-title').textContent=iWon?`Round ${G.round} — You Win!`:draw?`Round ${G.round} — Draw!`:`Round ${G.round} — They Win!`;
+    $('ov-sub').textContent='Prepare for the next round.';
+    $('ov-btn').textContent='Next Round →';
+  }
+  $('overlay').classList.remove('off');
+}
+
+function nextRound(){
+  G.round++;G.phase='duel';
+  $('overlay').classList.add('off');
+  resetRound();hudOn(true);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  NETWORKING (PeerJS WebRTC)
+// ══════════════════════════════════════════════════════════════
+function send(msg){
+  if(G.conn&&G.conn.open)G.conn.send(JSON.stringify(msg));
+}
+
+function onMsg(raw){
+  let msg;try{msg=JSON.parse(raw)}catch{return}
+  switch(msg.type){
+    case 'ready': // opponent sent their char+wand
+      G.oppChar=msg.charKey;G.oppWand=msg.wandKey;G.oppReady=true;
+      checkBothReady();break;
+    case 'cast':
+      // Opponent cast a spell — apply it
+      if(G.phase!=='duel')return;
+      const oppRole=G.myRole==='p1'?'p2':'p1';
+      const result=applySpellLocal(oppRole,msg.spell);
+      showCastResult(result);
+      setTimeout(()=>{
+        updateHUD();G.animating=false;
+        if(!G.p1.hp||!G.p2.hp)endRound();
+        else{G.turn=G.myRole;updateHUD();}
+      },750);
+      break;
+    case 'waste':
+      // Opponent wasted their turn
+      G.turn=G.myRole;updateHUD();
+      setFeedback(`Opponent tried "${msg.spell}" — invalid spell! Turn wasted.`,'rgba(255,200,100,.8)');
+      break;
+    case 'next_round':
+      if(G.phase==='roundover')nextRound();break;
+    case 'play_again':
+      resetToLobby();break;
+  }
+}
+
+function setupConn(c){
+  G.conn=c;
+  c.on('open',()=>{
+    setNet('Connected — choose your character','conn');
+    // Host is p1, joiner is p2
+    if(G.isHost){G.myRole='p1';}else{G.myRole='p2';}
+    goToCharSel();
+  });
+  c.on('data',onMsg);
+  c.on('close',()=>{setNet('Disconnected','disc');});
+  c.on('error',e=>{setNet('Connection error','disc');console.error(e);});
+}
+
+function initPeer(){
+  // Use the free peerjs cloud server
+  G.peer=new Peer(undefined,{
+    host:'0.peerjs.com',port:443,secure:true,path:'/',
+    config:{iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun1.l.google.com:19302'},
+    ]}
+  });
+  G.peer.on('open',id=>{
+    $('room-id-display').textContent=id;
+    setNet('Ready — share your Room ID','wait');
+  });
+  G.peer.on('connection',c=>{
+    G.isHost=true;setupConn(c);
+  });
+  G.peer.on('error',e=>{
+    setNet('Server error — retry','disc');
+    $('lobby-status').textContent='Could not reach matchmaking server. Check your connection.';
+    $('lobby-status').className='status-msg status-err';
+  });
+}
+
+// Copy room ID on click
+$('room-id-display').addEventListener('click',()=>{
+  const id=$('room-id-display').textContent;
+  if(id==='···')return;
+  navigator.clipboard.writeText(id).then(()=>{
+    $('room-id-display').style.color='var(--green)';
+    setTimeout(()=>$('room-id-display').style.color='',800);
+  });
+});
+
+$('btn-join').addEventListener('click',()=>{
+  const id=$('join-input').value.trim();
+  if(!id){$('lobby-status').textContent='Enter a Room ID first.';$('lobby-status').className='status-msg status-err';return;}
+  $('lobby-status').textContent='Connecting…';$('lobby-status').className='status-msg status-wait';
+  G.isHost=false;
+  const c=G.peer.connect(id,{reliable:true,serialization:'none'});
+  setupConn(c);
+  c.on('error',e=>{$('lobby-status').textContent='Could not connect to that Room ID.';$('lobby-status').className='status-msg status-err';});
+});
+
+// ══════════════════════════════════════════════════════════════
+//  SELECTION FLOW
+// ══════════════════════════════════════════════════════════════
+function goToCharSel(){
+  $('charsel-title').textContent='Choose Your Character';
+  $('char-grid').querySelectorAll('.c-card').forEach(c=>{
+    c.classList.remove('sel','disabled');
+  });
+  $('btn-charconfirm').disabled=true;
+  show('s-charsel');
+}
+
+$('btn-charconfirm').addEventListener('click',()=>{
+  const sel=$('char-grid').querySelector('.c-card.sel');
+  if(!sel)return;
+  G.myChar=sel.dataset.key;
+  $('btn-charconfirm').disabled=true;
+  show('s-wandsel');
+  $('wandsel-title').textContent=`${CHARS[G.myChar].name} — Choose Your Wand`;
+  $('wand-grid').querySelectorAll('.c-card').forEach(c=>c.classList.remove('sel'));
+  $('btn-wandconfirm').disabled=true;
+});
+
+$('btn-wandconfirm').addEventListener('click',()=>{
+  const sel=$('wand-grid').querySelector('.c-card.sel');
+  if(!sel)return;
+  G.myWand=sel.dataset.key;
+  G.myReady=true;
+  // Send to opponent
+  send({type:'ready',charKey:G.myChar,wandKey:G.myWand});
+  $('btn-wandconfirm').disabled=true;
+  $('wandsel-title').textContent='Waiting for opponent…';
+  checkBothReady();
+});
+
+function checkBothReady(){
+  if(!G.myReady||!G.oppReady)return;
+  // Both ready — init game
+  const mySlot=G.myRole,oppSlot=mySlot==='p1'?'p2':'p1';
+  initPlayer(mySlot,G.myChar,G.myWand);
+  initPlayer(oppSlot,G.oppChar,G.oppWand);
+  G.p1.rounds=0;G.p2.rounds=0;
+  G.round=1;G.turn='p1';G.phase='duel';
+  buildWizards();
+  show(null);hudOn(true);
+  resetRound();
+}
+
+// ── Overlay buttons ────────────────────────────────────────
+$('ov-btn').addEventListener('click',()=>{
+  if(G.phase==='matchover'){send({type:'play_again'});resetToLobby();}
+  else{send({type:'next_round'});nextRound();}
+});
+$('ov-quit').addEventListener('click',()=>{location.reload();});
+
+function resetToLobby(){
+  G.myChar=null;G.myWand=null;G.oppChar=null;G.oppWand=null;
+  G.myReady=false;G.oppReady=false;G.phase='lobby';
+  $('overlay').classList.add('off');hudOn(false);
+  show('s-lobby');
+}
+
+// ── Spell input ────────────────────────────────────────────
+function toggleSpellPanel(){$('spell-panel').classList.toggle('open');}
+$('spell-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();const v=$('spell-input').value.trim();$('spell-input').value='';doCast(v);}
+});
+$('cast-btn').addEventListener('click',()=>{const v=$('spell-input').value.trim();$('spell-input').value='';doCast(v);});
+document.addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='l'&&G.phase==='duel'&&document.activeElement!==$('spell-input')){
+    e.preventDefault();toggleSpellPanel();
+  }
+});
+document.addEventListener('click',e=>{
+  if(!$('spell-panel').contains(e.target)&&e.target.id!=='spell-input'&&e.target.id!=='cast-btn')
+    $('spell-panel').classList.remove('open');
+});
+
+// ── Splash enter ───────────────────────────────────────────
+let musicPlaying=false;
+function setMusic(v){
+  musicPlaying=v;$('mtog').textContent=v?'⏸':'▶';
+  $('sbars').classList.toggle('paused',!v);
+  try{$('yt').contentWindow.postMessage(JSON.stringify({event:'command',func:v?'playVideo':'pauseVideo',args:''}),'*');}catch{}
+}
+$('mtog').addEventListener('click',()=>setMusic(!musicPlaying));
+
+$('btn-enter').addEventListener('click',()=>{
+  setMusic(true);
+  setNet('Connecting to server…','wait');
+  show('s-lobby');
+  initPeer();
+});
+
+// Wand spark cursor
+let sparkT=0;
+document.addEventListener('mousemove',e=>{
+  const now=Date.now();if(now-sparkT<45)return;sparkT=now;
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;pointer-events:none;z-index:9999;
+    width:5px;height:5px;border-radius:50%;
+    left:${e.clientX}px;top:${e.clientY}px;
+    transform:translate(-50%,-50%);
+    background:${['#c9a84c','#f0d080','#39ff54','#ff3838','#74b9ff'][Math.random()*5|0]};
+    animation:sparkFade .6s ease forwards`;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),600);
+});
+// Inject keyframe
+const style=document.createElement('style');
+style.textContent='@keyframes sparkFade{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(3)}}';
+document.head.appendChild(style);
+
+// ── Projectile key fixup: avada kedavra has space ─────────
+// Already handled by passing spellKey=spell.name.toLowerCase()
+// and spellColor looks up by col property — no fix needed.
+
+// Replace the fireProjectile spellKey lookup fix:
+const _fire=fireProjectile;
+// spellColor uses SPELLS[spellKey].col but spellKey might have spaces
+// We already pass the raw spell name — patch lookup:
+function fireProjectile(fromSide,spellKey){
+  // Normalise key
+  const key=Object.keys(SPELLS).find(k=>SPELLS[k].name.toLowerCase()===spellKey.toLowerCase())||spellKey;
+  const col=SPELLS[key]?.col||0xffd700;
+  const sx=fromSide===1?-3.5:3.5;const ex=fromSide===1?3.5:-3.5;
+  const geo=new THREE.SphereGeometry(.2,12,12);
+  const mat=new THREE.MeshBasicMaterial({color:col});
+  const mesh=new THREE.Mesh(geo,mat);mesh.position.set(sx,1.15,0);
+  const halo=new THREE.Mesh(new THREE.SphereGeometry(.38,12,12),
+    new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.25,
+      side:THREE.BackSide,depthWrite:false}));
+  mesh.add(halo);
+  const pl=new THREE.PointLight(col,6,5);mesh.add(pl);scene.add(mesh);
+  const trailN=24,trailPos=new Float32Array(trailN*3);
+  const trailGeo=new THREE.BufferGeometry();
+  trailGeo.setAttribute('position',new THREE.BufferAttribute(trailPos,3));
+  const trailMat=new THREE.PointsMaterial({color:col,size:.18,transparent:true,opacity:.6,sizeAttenuation:true,depthWrite:false});
+  const trail=new THREE.Points(trailGeo,trailMat);scene.add(trail);
+  const history=Array.from({length:trailN},()=>new THREE.Vector3(sx,1.15,0));
+  projectiles.push({mesh,trail,trailPos,history,sx,ex,fromSide,spellKey:key,col,life:0,maxLife:.55,done:false});
+}
 </script>
 </body>
 </html>
