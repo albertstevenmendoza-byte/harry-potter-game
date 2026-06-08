@@ -329,12 +329,61 @@ canvas#c{display:block;position:fixed;inset:0;z-index:0}
 <iframe id="yt" src="https://www.youtube.com/embed/UBnO_p7EjSc?enablejsapi=1&loop=1&playlist=UBnO_p7EjSc&controls=0&origin=https://albertstevenmendoza-byte.github.io" style="position:fixed;width:1px;height:1px;opacity:0;bottom:0;left:0" allow="autoplay;encrypted-media" frameborder="0"></iframe>
 
 <!-- ════ THREE.JS ═════════════════════════════════════════ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
-<!-- PeerJS for WebRTC P2P multiplayer -->
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- Three.js — multi-CDN fallback chain so one blocked host never kills the game -->
+<script>
+(function(){
+  var cdns=[
+    'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js',
+    'https://unpkg.com/three@0.162.0/build/three.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js',
+  ];
+  var idx=0;
+  function tryNext(){
+    if(idx>=cdns.length){
+      document.body.innerHTML='<div style="color:#ff3838;font-family:monospace;padding:2rem;background:#050302;height:100vh;display:flex;align-items:center;justify-content:center;font-size:1.1rem">⚠ Could not load Three.js. Check your internet connection and refresh.</div>';
+      return;
+    }
+    var s=document.createElement('script');
+    s.src=cdns[idx++];
+    s.onload=function(){window._threeLoaded=true;};
+    s.onerror=function(){tryNext();};
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
+<!-- PeerJS — multi-CDN fallback -->
+<script>
+(function(){
+  var cdns=[
+    'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js',
+    'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
+  ];
+  var idx=0;
+  function tryNext(){
+    if(idx>=cdns.length)return;
+    var s=document.createElement('script');
+    s.src=cdns[idx++];
+    s.onerror=function(){tryNext();};
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
 
 <script>
 'use strict';
+// ── Wait for Three.js to finish loading before running ─────
+function waitForTHREE(cb,attempts){
+  attempts=attempts||0;
+  if(typeof THREE!=='undefined'){cb();return;}
+  if(attempts>200){
+    document.body.innerHTML='<div style="color:#ff3838;font-family:monospace;padding:2rem;background:#050302;height:100vh;display:flex;align-items:center;justify-content:center;font-size:1.1rem">&#9888; THREE.js failed to load. Check your connection and refresh.</div>';
+    return;
+  }
+  setTimeout(function(){waitForTHREE(cb,attempts+1);},50);
+}
+waitForTHREE(function(){
 // ══════════════════════════════════════════════════════════════
 //  GAME DATA
 // ══════════════════════════════════════════════════════════════
@@ -1348,6 +1397,7 @@ function fireProjectile(fromSide,spellKey){
   const history=Array.from({length:trailN},()=>new THREE.Vector3(sx,1.15,0));
   projectiles.push({mesh,trail,trailPos,history,sx,ex,fromSide,spellKey:key,col,life:0,maxLife:.55,done:false});
 }
+}); // end waitForTHREE
 </script>
 </body>
 </html>
