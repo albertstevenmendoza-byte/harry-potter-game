@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HP Duel — Wizarding Duels in Your Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<style>
+  /* ── Reset & base ───────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold:       #c9a84c;
+    --gold-dim:   #7a5c1e;
+    --gold-bright:#f0d080;
+    --green-dark: #0a1f0a;
+    --green-spell:#39ff54;
+    --red-spell:  #ff3838;
+    --parchment:  #f5ead0;
+    --ink:        #1a0a00;
+    --stone:      #1c1412;
+    --stone-mid:  #2a1f1a;
+    --stone-light:#3d2e26;
+    --white-dim:  rgba(255,255,255,0.08);
+    --glow-gold:  0 0 20px rgba(201,168,76,0.6), 0 0 60px rgba(201,168,76,0.2);
+    --glow-green: 0 0 20px rgba(57,255,84,0.5), 0 0 60px rgba(57,255,84,0.15);
+    --glow-red:   0 0 20px rgba(255,56,56,0.5), 0 0 60px rgba(255,56,56,0.15);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: #0d0907;
+    color: var(--parchment);
+    font-family: 'IM Fell English', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* ── Stone texture overlay ──────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+  }
+
+  /* ── Ambient floating particles ─────────────────────────── */
+  .particles {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    animation: drift linear infinite;
+  }
+  @keyframes drift {
+    0%   { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(-10vh) translateX(var(--dx)) scale(1.5); opacity: 0; }
+  }
+
+  /* ── Main wrapper ───────────────────────────────────────── */
+  .wrapper { position: relative; z-index: 2; }
+
+  /* ── Hero section ───────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 4rem 2rem;
+    position: relative;
+    text-align: center;
+  }
+
+  /* Radial spotlight behind title */
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -60%);
+    width: 800px; height: 600px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Horizontal rule lines */
+  .hero-rule {
+    width: 100%; max-width: 700px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 2rem 0;
+    position: relative;
+    animation: fadeIn 2s ease forwards;
+  }
+  .hero-rule::before, .hero-rule::after {
+    content: '✦';
+    position: absolute; top: 50%; transform: translateY(-50%);
+    color: var(--gold); font-size: 0.8rem;
+  }
+  .hero-rule::before { left: 0; }
+  .hero-rule::after  { right: 0; }
+
+  .eyebrow {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    animation: fadeIn 1s ease 0.3s both;
+  }
+
+  .title {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    font-size: clamp(3.5rem, 10vw, 8rem);
+    line-height: 0.9;
+    color: var(--gold);
+    text-shadow: var(--glow-gold);
+    letter-spacing: -0.02em;
+    animation: titleReveal 1.5s cubic-bezier(0.16,1,0.3,1) 0.5s both;
+  }
+
+  .title span {
+    display: block;
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    color: var(--parchment);
+    text-shadow: none;
+    letter-spacing: 0.15em;
+    font-weight: 400;
+    margin-top: 0.3em;
+  }
+
+  @keyframes titleReveal {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
+    to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .subtitle {
+    font-style: italic;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: rgba(245,234,208,0.6);
+    max-width: 540px;
+    line-height: 1.7;
+    animation: fadeIn 1s ease 1.2s both;
+  }
+
+  /* ── CTA Button ─────────────────────────────────────────── */
+  .cta-group {
+    display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+    margin-top: 0.5rem;
+    animation: fadeIn 1s ease 1.5s both;
+  }
+
+  .btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.9rem 2.2rem;
+    border: 1px solid var(--gold);
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-block;
+  }
+  .btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2));
+    transform: translateX(-100%) skewX(-15deg);
+    transition: transform 0.4s ease;
+  }
+  .btn:hover::before { transform: translateX(100%) skewX(-15deg); }
+  .btn:hover {
+    box-shadow: var(--glow-gold);
+    transform: translateY(-2px);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--gold);
+  }
+  .btn-ghost:hover {
+    background: rgba(201,168,76,0.1);
+    color: var(--gold-bright);
+  }
+
+  /* Wand spark trail cursor effect */
+  .spark {
+    position: fixed; pointer-events: none; z-index: 9999;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold-bright);
+    transform: translate(-50%, -50%);
+    animation: sparkFade 0.6s ease forwards;
+  }
+  @keyframes sparkFade {
+    0%   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(3); }
+  }
+
+  /* ── Divider ────────────────────────────────────────────── */
+  .section-divider {
+    display: flex; align-items: center; gap: 1.5rem;
+    max-width: 900px; margin: 0 auto 4rem;
+    padding: 0 2rem;
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim));
+  }
+  .section-divider::after {
+    background: linear-gradient(90deg, var(--gold-dim), transparent);
+  }
+  .section-divider span {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.7rem;
+    color: var(--gold-dim);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* ── Features grid ──────────────────────────────────────── */
+  .features {
+    padding: 6rem 2rem;
+    position: relative;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5px;
+    max-width: 1000px; margin: 0 auto;
+  }
+
+  .feature-card {
+    background: var(--stone-mid);
+    padding: 2.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(201,168,76,0.12);
+    transition: all 0.4s ease;
+    cursor: default;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    transform: scaleX(0);
+    transition: transform 0.4s ease;
+  }
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-card:hover {
+    background: var(--stone-light);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+    filter: drop-shadow(0 0 8px rgba(201,168,76,0.4));
+  }
+  .feature-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .feature-desc {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(245,234,208,0.65);
+    font-style: italic;
+  }
+
+  /* ── Spell showcase ─────────────────────────────────────── */
+  .spells-section {
+    padding: 4rem 2rem 6rem;
+    max-width: 900px; margin: 0 auto;
+  }
+  .section-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+  .section-sub {
+    text-align: center;
+    font-style: italic;
+    color: rgba(245,234,208,0.5);
+    margin-bottom: 3rem;
+    font-size: 0.95rem;
+  }
+
+  .spell-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  .spell-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 1rem 1.2rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: default;
+  }
+  .spell-card:hover { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.05); }
+  .spell-card:hover .spell-name { color: var(--gold-bright); }
+
+  .spell-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--parchment);
+    margin-bottom: 0.3rem;
+    transition: color 0.2s;
+  }
+  .spell-damage {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+  .spell-type {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,234,208,0.35);
+    font-style: normal;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .dmg-unforgivable { color: var(--green-spell); text-shadow: 0 0 10px rgba(57,255,84,0.5); }
+  .dmg-dark         { color: #ff6b6b; }
+  .dmg-blasting     { color: #ff9f43; }
+  .dmg-fire         { color: #ffa502; }
+  .dmg-shield       { color: #74b9ff; }
+  .dmg-default      { color: var(--gold); }
+
+  /* ── Characters section ─────────────────────────────────── */
+  .characters-section {
+    padding: 4rem 2rem 6rem;
+    background: linear-gradient(180deg, transparent, rgba(201,168,76,0.03), transparent);
+  }
+  .char-grid {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem;
+    max-width: 1000px; margin: 0 auto;
+  }
+  .char-card {
+    width: 170px;
+    background: var(--stone-mid);
+    border: 1px solid rgba(201,168,76,0.15);
+    padding: 1.8rem 1.2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    cursor: default;
+  }
+  .char-card:hover { transform: translateY(-8px) scale(1.03); border-color: var(--gold); }
+  .char-card:hover .char-glyph { text-shadow: var(--glow-gold); transform: scale(1.2); }
+
+  .char-glyph {
+    font-size: 2.8rem;
+    display: block; margin-bottom: 0.8rem;
+    transition: all 0.3s ease;
+  }
+  .char-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .char-title {
+    font-style: italic;
+    font-size: 0.72rem;
+    color: rgba(245,234,208,0.4);
+    line-height: 1.4;
+    margin-bottom: 0.8rem;
+  }
+  .char-stat {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: rgba(245,234,208,0.6);
+    display: flex; justify-content: space-between;
+    margin-top: 0.3rem;
+  }
+  .char-stat span:last-child { color: var(--gold); }
+
+  /* ── Terminal showcase ──────────────────────────────────── */
+  .terminal-section {
+    padding: 4rem 2rem 6rem;
+    max-width: 800px; margin: 0 auto;
+  }
+  .terminal {
+    background: #0a0a0a;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.7), var(--glow-gold);
+  }
+  .terminal-bar {
+    background: #1a1a1a;
+    padding: 0.6rem 1rem;
+    display: flex; align-items: center; gap: 0.6rem;
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+  }
+  .terminal-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .terminal-body {
+    padding: 1.5rem 1.5rem 2rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    color: #ccc;
+    overflow: hidden;
+  }
+  .t-gold    { color: var(--gold-bright); }
+  .t-green   { color: var(--green-spell); }
+  .t-red     { color: var(--red-spell); }
+  .t-blue    { color: #74b9ff; }
+  .t-dim     { color: #555; }
+  .t-white   { color: #eee; }
+  .t-hp      { color: #2ecc71; }
+  .t-prompt  { color: var(--gold); }
+
+  /* Blinking cursor */
+  .cursor {
+    display: inline-block; width: 8px; height: 1em;
+    background: var(--gold); vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ── How to play ────────────────────────────────────────── */
+  .howto-section {
+    padding: 4rem 2rem 6rem;
+    max-width: 700px; margin: 0 auto;
+  }
+  .step {
+    display: flex; gap: 1.5rem; margin-bottom: 2.5rem;
+    opacity: 0; transform: translateX(-20px);
+    transition: all 0.5s ease;
+  }
+  .step.visible { opacity: 1; transform: translateX(0); }
+  .step-num {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 2.5rem;
+    color: rgba(201,168,76,0.2);
+    line-height: 1;
+    min-width: 2.5rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .step-content {}
+  .step-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .step-desc {
+    font-style: italic;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(245,234,208,0.6);
+  }
+  .step-code {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.05);
+    border-left: 2px solid var(--gold-dim);
+    padding: 0.8rem 1rem;
+    margin-top: 0.8rem;
+    color: var(--green-spell);
+    white-space: pre;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid rgba(201,168,76,0.15);
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+  .footer-mark {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.5rem;
+    color: var(--gold-dim);
+    margin-bottom: 1rem;
+  }
+  .footer-text {
+    font-style: italic;
+    font-size: 0.85rem;
+    color: rgba(245,234,208,0.3);
+    line-height: 1.8;
+  }
+  .footer-text a {
+    color: var(--gold-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-text a:hover { color: var(--gold); }
+
+  /* ── Scroll-reveal utility ──────────────────────────────── */
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── Responsive ─────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .title { font-size: 3rem; }
+    .char-grid { gap: 1rem; }
+    .char-card { width: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Floating particles ──────────────────────────────────── -->
+<div class="particles" id="particles"></div>
+
+<!-- ── HERO ───────────────────────────────────────────────── -->
+<section class="hero">
+  <p class="eyebrow">A 2-player local dueling game</p>
+  <div class="hero-rule"></div>
+  <h1 class="title">HP Duel<span>Wizarding Duels</span></h1>
+  <div class="hero-rule"></div>
+  <p class="subtitle">
+    Cast canonical spells, outwit your opponent with strategy,
+    and claim three rounds to become the greatest witch or wizard
+    of your generation — all inside your terminal.
+  </p>
+  <div class="cta-group">
+    <a href="https://github.com/YOUR_USERNAME/hp-duel" class="btn" target="_blank" rel="noopener">
+      ⚡ View on GitHub
+    </a>
+    <a href="#how-to-play" class="btn btn-ghost">How to Play</a>
+  </div>
+</section>
+
+<!-- ── FEATURES ────────────────────────────────────────────── -->
+<section class="features">
+  <div class="section-divider"><span>The Game</span></div>
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <span class="feature-icon">🧙</span>
+      <div class="feature-title">5 Iconic Characters</div>
+      <p class="feature-desc">Harry, Hermione, Ron, Voldemort, or Snape — each with unique HP totals and spell-power multipliers.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🪄</span>
+      <div class="feature-title">5 Legendary Wands</div>
+      <p class="feature-desc">Holly, Vine, Elder, Walnut, and Ash — each grants a damage bonus to its affinity spell.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📜</span>
+      <div class="feature-title">20 Canonical Spells</div>
+      <p class="feature-desc">Type the real spell name or lose your turn. Expelliarmus to Avada Kedavra, all included.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚖️</span>
+      <div class="feature-title">Diminishing Returns</div>
+      <p class="feature-desc">Cast the same spell twice in a row and it deals only 50 % damage. Variety wins duels.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🏆</span>
+      <div class="feature-title">Best-of-Five</div>
+      <p class="feature-desc">First player to claim three rounds wins the match. Every round is a fresh duel.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">✨</span>
+      <div class="feature-title">Rich Terminal UI</div>
+      <p class="feature-desc">Animated HP bars, coloured spell trajectories, character panels, and cinematic round transitions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── SPELLS ────────────────────────────────────────────────  -->
+<section class="spells-section reveal">
+  <h2 class="section-title">The Spellbook</h2>
+  <p class="section-sub">Every spell is validated against this hardcoded registry. Type it wrong — lose your turn.</p>
+  <div class="spell-grid" id="spell-grid"></div>
+</section>
+
+<!-- ── CHARACTERS ─────────────────────────────────────────── -->
+<section class="characters-section reveal">
+  <h2 class="section-title" style="margin-bottom:.5rem">Choose Your Duelist</h2>
+  <p class="section-sub">Five witches and wizards. One winner.</p>
+  <div class="char-grid">
+    <div class="char-card">
+      <span class="char-glyph">⚡</span>
+      <div class="char-name">Harry Potter</div>
+      <div class="char-title">The Boy Who Lived</div>
+      <div class="char-stat"><span>HP</span><span>120</span></div>
+      <div class="char-stat"><span>Power</span><span>×1.10</span></div>
+      <div class="char-stat"><span>Sig</span><span>Expelliarmus</span></div>
+    </div>
+    <div class="char-card">
+      <span class="char-glyph">📚</span>
+      <div class="char-name">Hermione</div>
+      <div class="char-title">Brightest Witch of Her Age</div>
+      <div class="char-stat"><span>HP</span><span>110</span></div>
+      <div class="char-stat"><span>Power</span><span>×1.20</span></div>
+      <div class="char-stat"><span>Sig</span><span>Stupefy</span></div>
+    </div>
+    <div class="char-card">
+      <span class="char-glyph">🦁</span>
+      <div class="char-name">Ron Weasley</div>
+      <div class="char-title">The Loyal Heart</div>
+      <div class="char-stat"><span>HP</span><span>130</span></div>
+      <div class="char-stat"><span>Power</span><span>×1.00</span></div>
+      <div class="char-stat"><span>Sig</span><span>Diffindo</span></div>
+    </div>
+    <div class="char-card">
+      <span class="char-glyph">☠</span>
+      <div class="char-name">Voldemort</div>
+      <div class="char-title">He Who Must Not Be Named</div>
+      <div class="char-stat"><span>HP</span><span>115</span></div>
+      <div class="char-stat"><span>Power</span><span>×1.35</span></div>
+      <div class="char-stat"><span>Sig</span><span>Avada Kedavra</span></div>
+    </div>
+    <div class="char-card">
+      <span class="char-glyph">🖤</span>
+      <div class="char-name">Snape</div>
+      <div class="char-title">The Half-Blood Prince</div>
+      <div class="char-stat"><span>HP</span><span>115</span></div>
+      <div class="char-stat"><span>Power</span><span>×1.25</span></div>
+      <div class="char-stat"><span>Sig</span><span>Sectumsempra</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TERMINAL PREVIEW ────────────────────────────────────── -->
+<section class="terminal-section reveal">
+  <h2 class="section-title" style="margin-bottom:.5rem">In the Arena</h2>
+  <p class="section-sub" style="margin-bottom:2rem">A glimpse of the dueling interface</p>
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot" style="background:#ff5f56"></div>
+      <div class="terminal-dot" style="background:#ffbd2e"></div>
+      <div class="terminal-dot" style="background:#27c93f"></div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:#555;margin-left:0.5rem">hp_duel.py</span>
+    </div>
+    <div class="terminal-body">
+<span class="t-gold">══════════════════════════════════════════════════════════</span>
+<span class="t-gold">  ⚡  ROUND 2  ⚡  (Best of 5)</span>
+<span class="t-gold">══════════════════════════════════════════════════════════</span>
+
+  <span class="t-white">Harry Potter</span>  <span class="t-dim">(Round wins: 1)</span>
+  HP: <span class="t-hp">████████████████░░░░░░░░░░░░  88/120</span>
+
+  <span class="t-white">Lord Voldemort</span>  <span class="t-dim">(Round wins: 0)</span>
+  HP: <span class="t-hp">████████████████████████████  115/115</span>
+
+<span class="t-dim">────────────────────────── Harry Potter's Turn ──────────</span>
+
+  <span class="t-dim">Last spell: Stupefy — casting again deals 50% damage.</span>
+  <span class="t-dim">(Type LIST to see all spells  |  QUIT to exit)</span>
+
+<span class="t-prompt">  ⚡  Harry Potter, cast your spell: </span><span class="t-white">sectumsempra</span>
+
+  <span class="t-red">─── ✨ ── ✨ ─── ✨ ──&gt;  SECTUMSEMPRA</span>
+  <span class="t-dim">Invisible blades cut through the air like a scythe.</span>
+
+  <span class="t-red">✨  Harry Potter casts Sectumsempra!</span>
+  <span class="t-white">Lord Voldemort takes </span><span class="t-red">69</span><span class="t-white"> damage!</span>
+     <span class="t-dim">Character bonus ×1.10</span>
+
+<span class="t-prompt">  ⚡  Lord Voldemort, cast your spell: </span><span class="cursor"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW TO PLAY ─────────────────────────────────────────── -->
+<section class="howto-section" id="how-to-play">
+  <div class="section-divider"><span>Get Started</span></div>
+  <h2 class="section-title" style="margin-bottom:.5rem">Installation</h2>
+  <p class="section-sub" style="margin-bottom:3rem">Three commands. Then duel.</p>
+
+  <div class="step" id="step1">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <div class="step-title">Clone the repository</div>
+      <p class="step-desc">Download the project to your machine.</p>
+      <div class="step-code">git clone https://github.com/YOUR_USERNAME/hp-duel.git
+cd hp-duel</div>
+    </div>
+  </div>
+
+  <div class="step" id="step2">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <div class="step-title">Install the one dependency</div>
+      <p class="step-desc">Requires Python 3.10+ and the Rich library for the terminal UI.</p>
+      <div class="step-code">pip install -r requirements.txt</div>
+    </div>
+  </div>
+
+  <div class="step" id="step3">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <div class="step-title">Start the duel</div>
+      <p class="step-desc">Both players sit at the same keyboard. The game handles the rest.</p>
+      <div class="step-code">python hp_duel.py</div>
+    </div>
+  </div>
+
+  <div class="step" id="step4">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <div class="step-title">Remember the rules</div>
+      <p class="step-desc">Type a spell name on your turn. Type <strong style="color:var(--gold);font-style:normal">LIST</strong> for a free spell reference. First to win <strong style="color:var(--gold);font-style:normal">3 rounds</strong> wins the match. Casting the same spell twice in a row deals only <strong style="color:var(--red-spell);font-style:normal">50%</strong> damage — mix it up.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-mark">HP Duel</div>
+  <div class="footer-text">
+    Built with Python &amp; <a href="https://github.com/Textualize/rich" target="_blank">Rich</a>.<br/>
+    All Harry Potter characters and spells are the intellectual property of J.K. Rowling and Warner Bros.<br/>
+    This is a fan project made for educational and entertainment purposes only.<br/><br/>
+    <a href="https://github.com/YOUR_USERNAME/hp-duel" target="_blank">github.com/YOUR_USERNAME/hp-duel</a>
+  </div>
+</footer>
+
+<script>
+// ── Spell data ────────────────────────────────────────────────
+const spells = [
+  { name:"Avada Kedavra",     damage:80,  type:"unforgivable" },
+  { name:"Sectumsempra",      damage:55,  type:"dark"         },
+  { name:"Crucio",            damage:45,  type:"unforgivable" },
+  { name:"Expulso",           damage:42,  type:"blasting"     },
+  { name:"Confringo",         damage:40,  type:"blasting"     },
+  { name:"Bombarda",          damage:38,  type:"blasting"     },
+  { name:"Reducto",           damage:36,  type:"blasting"     },
+  { name:"Diffindo",          damage:35,  type:"severing"     },
+  { name:"Incendio",          damage:32,  type:"fire"         },
+  { name:"Stupefy",           damage:30,  type:"stunning"     },
+  { name:"Petrificus Totalus",damage:28,  type:"binding"      },
+  { name:"Expelliarmus",      damage:25,  type:"disarming"    },
+  { name:"Flipendo",          damage:22,  type:"knockback"    },
+  { name:"Imperio",           damage:20,  type:"unforgivable" },
+  { name:"Locomotor Mortis",  damage:18,  type:"binding"      },
+  { name:"Levicorpus",        damage:15,  type:"jinx"         },
+  { name:"Furnunculus",       damage:12,  type:"jinx"         },
+  { name:"Langlock",          damage:10,  type:"jinx"         },
+  { name:"Densaugeo",         damage:8,   type:"jinx"         },
+  { name:"Protego",           damage:-20, type:"shield"       },
+];
+
+const typeColor = {
+  unforgivable:"dmg-unforgivable", dark:"dmg-dark",
+  blasting:"dmg-blasting", fire:"dmg-fire",
+  shield:"dmg-shield",
+};
+
+const grid = document.getElementById('spell-grid');
+spells.forEach(s => {
+  const cls = typeColor[s.type] || 'dmg-default';
+  const dmgLabel = s.damage < 0 ? `+${Math.abs(s.damage)} HP` : s.damage;
+  grid.insertAdjacentHTML('beforeend', `
+    <div class="spell-card">
+      <div class="spell-name">${s.name}</div>
+      <div class="spell-damage ${cls}">${dmgLabel}</div>
+      <div class="spell-type">${s.type}</div>
+    </div>
+  `);
+});
+
+// ── Particles ────────────────────────────────────────────────
+const pc = document.getElementById('particles');
+const colors = ['#c9a84c','#f0d080','#39ff54','#ff3838','#74b9ff'];
+for (let i = 0; i < 28; i++) {
+  const el = document.createElement('div');
+  el.className = 'particle';
+  const size = Math.random() * 3 + 1;
+  const left = Math.random() * 100;
+  const dur  = Math.random() * 18 + 12;
+  const del  = Math.random() * 15;
+  const dx   = (Math.random() - 0.5) * 160 + 'px';
+  const col  = colors[Math.floor(Math.random() * colors.length)];
+  el.style.cssText = `
+    width:${size}px; height:${size}px; left:${left}%;
+    background:${col}; --dx:${dx};
+    animation-duration:${dur}s; animation-delay:-${del}s;
+    box-shadow: 0 0 ${size*3}px ${col};
+  `;
+  pc.appendChild(el);
+}
+
+// ── Wand-spark cursor ────────────────────────────────────────
+let sparkTimer = 0;
+document.addEventListener('mousemove', e => {
+  const now = Date.now();
+  if (now - sparkTimer < 50) return;
+  sparkTimer = now;
+  const spark = document.createElement('div');
+  spark.className = 'spark';
+  spark.style.left = e.clientX + 'px';
+  spark.style.top  = e.clientY + 'px';
+  spark.style.background = colors[Math.floor(Math.random()*colors.length)];
+  document.body.appendChild(spark);
+  setTimeout(() => spark.remove(), 600);
+});
+
+// ── Scroll reveal ────────────────────────────────────────────
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Steps reveal with stagger
+const stepObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const steps = document.querySelectorAll('.step');
+      steps.forEach((s, i) => {
+        setTimeout(() => s.classList.add('visible'), i * 180);
+      });
+      stepObs.disconnect();
+    }
+  });
+}, { threshold: 0.1 });
+const firstStep = document.getElementById('step1');
+if (firstStep) stepObs.observe(firstStep);
+</script>
+</body>
+</html>
