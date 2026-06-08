@@ -503,16 +503,17 @@ function stoneCanvas(W,H,base,mortar,noise=.04){
   ctx.putImageData(id,0,0);
   const t=new THREE.CanvasTexture(cv);
   t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t._canvas=cv; // keep raw canvas reference for normal map generation
   return t;
 }
 
-// Normal-map approximation from texture
+// Normal-map approximation — accepts a CanvasTexture (reads ._canvas) or raw canvas
 function makeNormalMap(diffuseTex,scale=3){
   const cv=document.createElement('canvas');cv.width=128;cv.height=128;
   const ctx=cv.getContext('2d');
-  // Draw source shrunk
-  const src=diffuseTex.source.data;
-  ctx.drawImage(src,0,0,128,128);
+  // Resolve source canvas — works whether we receive a CanvasTexture or raw canvas
+  const srcCanvas=diffuseTex._canvas||diffuseTex.source?.data||diffuseTex;
+  ctx.drawImage(srcCanvas,0,0,128,128);
   const id=ctx.getImageData(0,0,128,128);
   const out=ctx.createImageData(128,128);
   for(let y=1;y<127;y++){for(let x=1;x<127;x++){
